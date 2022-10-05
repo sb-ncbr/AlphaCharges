@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="AlphaCharges is an application for fast calculation of partial atomic charges of structures from the Alphafold database.">
+    <title>{% block title %} αCharges {% endblock title %}</title>
+
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}">
+
+{% block styles %}
+{% endblock styles %}
+</head>
+
+<body>
+
+{% block body %}
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='jquery/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+{% endblock scripts %}
+
+</body>
+</html>

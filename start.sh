@@ -2,12 +2,15 @@
 #  Flavor: standard.large
 #  Networks: 147-251-115-pers-proj-net
 
-# sudo apt update
-# sudo apt install git
-# sudo bash start.sh
-
-
 # https://techtutorguro.com/how-to-install-flask-on-ubuntu-22-04-with-apache/
+
+
+
+#sudo apt update
+#sudo apt install git
+#sudo bash start.sh
+
+
 
 
 sudo apt update -y && apt upgrade -y
@@ -20,10 +23,10 @@ cd /opt/flask/
 python3 -m venv venv
 source venv/bin/activate
 pip install flask
-cp /home/ubuntu/AlphaCharges/start_scripts/app.py .
-cp /home/ubuntu/AlphaCharges/start_scripts/flaskapp.wsgi .
+cp /home/ubuntu/AlphaCharges/start_scripts/app/routes.py .
+cp /home/ubuntu/AlphaCharges/start_scripts/app/alpha_charges.wsgi .
 sudo rm -f /etc/apache2/sites-available/*
-cp /home/ubuntu/AlphaCharges/start_scripts/flask.conf /etc/apache2/sites-available/
+cp /home/ubuntu/AlphaCharges/start_scripts/alpha_charges.conf /etc/apache2/sites-available/
 sudo chown -R www-data:www-data /opt
 sudo chmod o+rx flaskapp.wsgi 
 sudo chmod o+rx app.py 
@@ -33,4 +36,4 @@ sudo chmod o+rx app.py
 sudo a2ensite flask.conf
 sudo systemctl restart apache2
 
-# cat /var/log/apache2/error.log
+# cat /var/log/apache2/error.log0

@@ -1,0 +1,49 @@
+{% extends 'base/base.html' %}
+
+{% block body %}
+    <div class="container p-3">
+        <div class="d-none mt-3 d-lg-block"></div>
+        <form method=post enctype=multipart/form-data>
+            <input type="hidden" name="type" id="type" value="example"/>
+            <input type="hidden" name="example-name" id="example-name" value="N/A"/>
+            <div class="row">
+                <div class="col">
+
+                    <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges</h1>
+
+                    Tool for simple, fast and accurate calculation of QM-like partial atomic charges for Alphafold database structures.
+                </div>
+            </div>
+            {% include 'base/flash.html' %}
+            <hr>
+
+            L8BU87 500 atomů
+            A0A0G4E6W7 651 AMK
+            A0A1B1IL03 351 AMK
+
+            <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
+                <label style="color:black" for="title">Alphafold structure code:</label>
+                <input type="text" name="code"
+                       placeholder="" class="form-control"
+                       value="{{ request.form['code'] }}">
+            </div>
+            <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
+                <label style="color:black" for="title">Ph:</label>
+                <input type="text" name="ph"
+                       placeholder="7.2" class="form-control"
+                       value="{{ request.form['ph'] }}">
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Calculate charges</button>
+            </div>
+
+        </form>
+
+        <hr>
+        {% include 'base/elixir.html' %}
+        <hr>
+        {% include 'base/footer.html' %}
+    </div>
+
+{% endblock body %}

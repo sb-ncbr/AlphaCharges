@@ -1,0 +1,128 @@
+{% extends 'base/base.html' %}
+
+{% block title %} αCharges – Calculation results {% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-select/bootstrap-select.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='litemol/static/css/main.css') }}">
+    <link rel="preload" href="{{ url_for('static', filename='litemol/static/media/fontello.woff2') }}?version=r6.6"
+          as="font" type="font/woff2" crossorigin>
+{% endblock styles %}
+
+{% block body %}
+    <div class="container mt-3 p-3">
+        <div class="row">
+            <div class="col">
+                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges - <span>Calculation results</span></h1>
+            </div>
+        </div>
+
+        <p>
+            <span style="font-weight:bold"> Structure Alphafold code:</span> {{ code }}
+
+        </p>
+        <p>
+            <span style="font-weight:bold"> Number of atoms:</span> {{ n_ats }}
+        </p>
+        <p>
+            <span style="font-weight:bold"> pH:</span> {{ ph }}
+        </p>
+
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <fieldset class="row form-group mb-1">
+                        <legend class="font-weight-bold col-form-label col pb-0 pt-0">View</legend>
+                        <div class="col">
+                            <div class="form-check form-check-inline" title="Cartoon representation">
+                                <input class="form-check-input" type="radio" name="view" id="view_cartoon"
+                                       value="Cartoon">
+                                <label class="form-check-label" for="view_cartoon">Cartoon</label>
+                            </div>
+                            <div class="form-check form-check-inline" title="Balls and sticks representation">
+                                <input class="form-check-input" type="radio" name="view" id="view_bas"
+                                       value="Balls and sticks">
+                                <label class="form-check-label" for="view_bas">Balls and sticks</label>
+                            </div>
+                            <div class="form-check form-check-inline" title="Surface representation">
+                                <input class="form-check-input" type="radio" name="view" id="view_surface"
+                                       value="Surface">
+                                <label class="form-check-label" for="view_surface">Surface</label>
+                            </div>
+                        </div>
+                </fieldset>
+                <fieldset class="row form-group mb-0">
+                        <legend class="font-weight-bold col-form-label col pb-0 pt-0">Coloring</legend>
+                        <div class="col">
+                            <div class="form-check form-check-inline col" title="Use coloring based on the structure">
+                                <input class="form-check-input" type="radio" name="colors" id="colors_structure"
+                                       value="Structure">
+                                <label class="form-check-label" for="colors_structure">Structure</label>
+                            </div>
+                            <div class="form-check form-check-inline col-auto" title="Use coloring based on the largest absolute charge value">
+                                <input class="form-check-input" type="radio" name="colors" id="colors_relative"
+                                       value="Relative" checked>
+                                <label class="form-check-label" for="colors_relative">Charges (relative)</label>
+                            </div>
+                            <div class="form-check form-check-inline col-auto" title="Use coloring based on the specified values below">
+                                <input class="form-check-input" type="radio" name="colors" id="colors_absolute"
+                                       value="Absolute">
+                                <label class="form-check-label" for="colors_absolute">Charges (absolute)</label>
+                            </div>
+                            <div class="form-group form-inline mb-0">
+                                <label class="col-sm-6 col-lg-3 col-form-label" for="min_value">Min value:</label>
+                                <input class="col-sm-6 col-lg-3 form-control" type="number" id="min_value"
+                                       name="min_value"
+                                       min="-5" max="5" step="0.1" value="-1">
+                                <label class="col-sm-6 col-lg-3 col-form-label" for="max_value">Max value:</label>
+                                <input class="col-sm-6 col-lg-3 form-control" type="number" id="max_value"
+                                       name="max_value"
+                                       min="-5" max="5" step="0.1" value="1">
+                            </div>
+                        </div>
+                </fieldset>
+            </div>
+        </div>
+        <hr>
+
+        {% include 'base/flash.html' %}
+
+        <div class="row">
+            <div class="col">
+                <div id="root" style="height: 750px"></div>
+            </div>
+        </div>
+        <hr>
+
+
+        <div class="row">
+            <div class="col-7">
+                <a href="{{ url_for('download_charges', r=comp_id) }}" class="btn btn-success" id="download">Download
+                    charges</a>
+            </div>
+            <div class="col text-right">
+                <a href="/" class="btn btn-primary">Back to main page</a>
+            </div>
+        </div>
+
+        <hr>
+        {% include 'base/footer.html' %}
+    </div>
+{% endblock body %}
+
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='jquery/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap-select/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='litemol/LiteMol-plugin.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='litemol/static/js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+
+    <script>
+        const get_structure_url = '{{ url_for("get_structure", ID=ID) }}';
+        const get_charges_url = '{{ url_for("get_charges", ID=ID) }}';
+        const get_format_url = '{{ url_for("get_format", ID=ID) }}';
+        init_results("{{ ID }}", "{{ chg_range }}")
+    </script>
+{% endblock scripts %}

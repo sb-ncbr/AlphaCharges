@@ -1,0 +1,58 @@
+{% extends 'base/base.html' %}
+
+{% block title %} αCharges – Calculation results {% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-select/bootstrap-select.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='litemol/static/css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+{% endblock styles %}
+
+{% block body %}
+    <div class="container mt-3 p-3">
+        <div class="row">
+            <div class="col">
+                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges - <span>Calculation progress</span></h1>
+            </div>
+        </div>
+
+        <p>
+            <span style="font-weight:bold"> Structure Alphafold code:</span> {{ code }}
+        </p>
+        <p>
+            <span style="font-weight:bold"> pH:</span> {{ ph }}
+        </p>
+        <hr>
+
+        <p id="progress"></p>
+
+
+
+        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+<!--https://loading.io/css/-->
+
+
+
+{% endblock body %}
+{% block scripts %}
+    <script>
+        function navigate() {
+            window.location.href = '{{ url_for("results", ID=ID) }}';  // Redirects user to the /map route when 'create_map' is finished
+        }
+        fetch('{{ url_for("calculation", ID=ID) }}').then(navigate); // Performing 'create_map' and then calls navigate() function, declared above
+        //fetch('{{ url_for("calculation", ID=ID) }}'); // Performing 'create_map' and then calls navigate() function, declared above
+    </script>
+
+        <script>
+        var clock = document.getElementById("progress");
+
+    setInterval(() => {
+        fetch("{{ url_for('progress', ID=ID) }}")
+        .then(response => {
+                response.text().then(t => {clock.innerHTML = t})
+            });
+        }, 1000);
+        </script>
+{% endblock scripts %}
+
