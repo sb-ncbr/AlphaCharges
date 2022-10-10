@@ -1,12 +1,31 @@
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, abort
 from time import time
-from . import application
 import requests
 from .src.molecule import Molecule
 from .src.SQEqp_h import SQEqp_h
 import shutil
 
 import os
+from flask import Flask
+
+application = Flask(__name__)
+
+
+application.jinja_env.trim_blocks = True
+application.jinja_env.lstrip_blocks = True
+
+application.config['SECRET_KEY'] = "asdfasdf"
+
+
+
+
+
+
+
+
+
+
+
 
 request_data = {}
 
