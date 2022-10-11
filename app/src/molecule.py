@@ -211,7 +211,7 @@ class Molecule:
         self.surfaces = np.array(surfaces)
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True)
 def dist(grid, c, d):
     indices_to_remove = []
     e, f, g = c
@@ -220,7 +220,7 @@ def dist(grid, c, d):
             indices_to_remove.append(gi)
     return indices_to_remove
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True)
 def fibonacci_sphere(xc, yc, zc, radius, num_pts):
     indices = np.arange(0, num_pts, dtype=np.float64) + 0.5
     phi = np.arccos(1 - 2 * indices / num_pts)

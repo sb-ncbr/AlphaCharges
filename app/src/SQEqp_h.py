@@ -6,8 +6,8 @@ from numba.typed import Dict
 import numpy as np
 
 class SQEqp_h:
-    def __init__(self):
-        params = json.load(open("parameters/parameters.json"))
+    def __init__(self, parameters):
+        params = json.load(open(parameters))
         for i, parameter_name in enumerate(["electronegativity",
                                             "hardness",
                                             "width",
@@ -47,7 +47,7 @@ class SQEqp_h:
         return charges
 
 
-@numba.jit(nopython=True, cache=True)
+@numba.jit(nopython=True)
 def sqeqp_calculate(ats_srepr, bonds, bonds_srepr, distance_matrix, total_chg, surfaces,
 
                     pelectronegativity,

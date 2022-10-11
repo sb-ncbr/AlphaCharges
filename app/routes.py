@@ -1,10 +1,10 @@
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, abort
-from time import time
+from time import time, sleep
 import requests
-from .src.molecule import Molecule
-from .src.SQEqp_h import SQEqp_h
+from src.molecule import Molecule
+from src.SQEqp_h import SQEqp_h
 import shutil
-
+from termcolor import colored
 import os
 from flask import Flask
 
@@ -16,7 +16,7 @@ application.jinja_env.lstrip_blocks = True
 
 application.config['SECRET_KEY'] = "asdfasdf"
 
-
+root_dir = "/opt/AlphaCharges/"
 
 
 
@@ -60,12 +60,13 @@ def main_site():
         print(f"Structure downloaded. ({time() - s})")
         n_heavy_atoms = response.text.count("ATOM")
         ID = f"{code}_{ph}"
-        tmp_dir = f"calculate_{ID}"
+        tmp_dir = f"{root_dir}calculate_{ID}"
         try:
             os.mkdir(tmp_dir)
         except FileExistsError:
             shutil.rmtree(tmp_dir)
             os.mkdir(tmp_dir)
+
         request_data[ID] = {}
         request_data[ID]["code"] = code
         request_data[ID]["ph"] = ph
@@ -102,7 +103,7 @@ def calculation():
 
     open(pdb_file, "w").write(pdb_text)
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
-    os.system(f"pdb2pqr30 --log-level DEBUG --noopt --with-ph {ph} "
+    os.system(f"/opt/AlphaCharges/venv/bin/pdb2pqr30 --log-level DEBUG --noopt --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {tmp_dir}/propka.log 2>&1 ")
     print(f"Structure protonated. ({time() - s})")
     request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 2/6:</span> Structure protonated. ({round(time() - s, 2)}s) </p>"
@@ -124,7 +125,7 @@ def calculation():
     request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 5/6:</span> Solvatable surface caluclated. ({round(time() - s, 2)}s) </p>"
 
     s = time()
-    empirical_method = SQEqp_h()
+    empirical_method = SQEqp_h(f"{root_dir}parameters/parameters.json")
     request_data[ID]["pdb_file"] = open(pdb_file_with_hydrogens, "r").read()
     charges = empirical_method.calculate_charges(molecule)
     print(f"Charges calculated. ({time() - s})")
@@ -134,7 +135,11 @@ def calculation():
     request_data[ID]["n_ats"] = molecule.n_ats
     request_data[ID]["chg_range"] = round(max(abs(charges)), 4)
     return render_template('results.html',
-                                   ID=ID)
+                           ID=ID,
+                           chg_range=request_data[ID]['chg_range'],
+                           code=code,
+                           n_ats=request_data[ID]['n_ats'],
+                           ph=ph)
 
 
 @application.route('/progress')
