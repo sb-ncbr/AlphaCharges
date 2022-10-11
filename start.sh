@@ -18,7 +18,7 @@ sudo apt-get install python3-pip python3-venv
 sudo apt install apache2
 sudo apt-get install libapache2-mod-wsgi-py3
 
-python3 -m venv venv
+sudo python3 -m venv venv
 source venv/bin/activate
 pip install flask requests scipy rdkit numba numpy pdb2pqr
 sudo rm -f /etc/apache2/sites-available/*
