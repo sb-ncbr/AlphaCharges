@@ -20,9 +20,10 @@ sudo apt-get install libapache2-mod-wsgi-py3
 
 sudo python3 -m venv venv
 source venv/bin/activate
+sudo chown -R ubuntu:ubuntu /opt
 pip install flask requests scipy rdkit numba numpy pdb2pqr
 sudo rm -f /etc/apache2/sites-available/*
-cp AlphaCharges.conf /etc/apache2/sites-available/
+sudo cp AlphaCharges.conf /etc/apache2/sites-available/
 sudo chown -R www-data:www-data /opt
 sudo chmod o+rx app/AlphaCharges.wsgi
 sudo chmod o+rx app/routes.py
