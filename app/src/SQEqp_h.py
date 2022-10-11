@@ -47,7 +47,7 @@ class SQEqp_h:
         return charges
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, cache=True)
 def sqeqp_calculate(ats_srepr, bonds, bonds_srepr, distance_matrix, total_chg, surfaces,
 
                     pelectronegativity,

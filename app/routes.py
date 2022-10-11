@@ -4,7 +4,6 @@ import requests
 from src.molecule import Molecule
 from src.SQEqp_h import SQEqp_h
 import shutil
-from termcolor import colored
 import os
 from flask import Flask
 
@@ -16,7 +15,7 @@ application.jinja_env.lstrip_blocks = True
 
 application.config['SECRET_KEY'] = "asdfasdf"
 
-root_dir = "/opt/AlphaCharges/"
+root_dir = "/opt/AlphaCharges/app/"
 
 
 

@@ -22,7 +22,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install flask requests scipy rdkit numba numpy pdb2pqr
 sudo rm -f /etc/apache2/sites-available/*
-cp /home/ubuntu/AlphaCharges/start_scripts/alpha_charges.conf /etc/apache2/sites-available/
+cp AlphaCharges.conf /etc/apache2/sites-available/
 sudo chown -R www-data:www-data /opt
 sudo chmod o+rx app/AlphaCharges.wsgi
 sudo chmod o+rx app/routes.py
