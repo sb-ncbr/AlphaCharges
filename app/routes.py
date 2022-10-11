@@ -15,7 +15,13 @@ application.jinja_env.lstrip_blocks = True
 
 application.config['SECRET_KEY'] = "asdfasdf"
 
-root_dir = "/opt/AlphaCharges/app/"
+import shutil
+
+
+root_dir = os.path.dirname(os.path.abspath(__file__))
+pdb_to_pqr_path = shutil.which("pdb2pqr30")
+
+
 
 
 
@@ -59,7 +65,7 @@ def main_site():
         print(f"Structure downloaded. ({time() - s})")
         n_heavy_atoms = response.text.count("ATOM")
         ID = f"{code}_{ph}"
-        tmp_dir = f"{root_dir}calculate_{ID}"
+        tmp_dir = f"{root_dir}/calculate_{ID}"
         try:
             os.mkdir(tmp_dir)
         except FileExistsError:
@@ -102,7 +108,7 @@ def calculation():
 
     open(pdb_file, "w").write(pdb_text)
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
-    os.system(f"/opt/AlphaCharges/venv/bin/pdb2pqr30 --log-level DEBUG --noopt --with-ph {ph} "
+    os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {tmp_dir}/propka.log 2>&1 ")
     print(f"Structure protonated. ({time() - s})")
     request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 2/6:</span> Structure protonated. ({round(time() - s, 2)}s) </p>"
@@ -124,7 +130,7 @@ def calculation():
     request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 5/6:</span> Solvatable surface caluclated. ({round(time() - s, 2)}s) </p>"
 
     s = time()
-    empirical_method = SQEqp_h(f"{root_dir}parameters/parameters.json")
+    empirical_method = SQEqp_h(f"{root_dir}/parameters/parameters.json")
     request_data[ID]["pdb_file"] = open(pdb_file_with_hydrogens, "r").read()
     charges = empirical_method.calculate_charges(molecule)
     print(f"Charges calculated. ({time() - s})")
