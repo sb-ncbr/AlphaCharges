@@ -9,11 +9,11 @@
 #sudo apt update
 #sudo apt install git
 #sudo bash start.sh
-# git clone https://github.com/dargen3/AlphaCharges in /opt folder
+# sudo git clone https://github.com/dargen3/AlphaCharges in /opt folder
 
 
 
-sudo apt update -y && apt upgrade -y
+sudo apt update -y && sudo apt upgrade -y
 sudo apt-get install python3-pip python3-venv
 sudo apt install apache2
 sudo apt-get install libapache2-mod-wsgi-py3
