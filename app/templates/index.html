@@ -4,38 +4,45 @@
     <div class="container p-3">
         <div class="d-none mt-3 d-lg-block"></div>
         <form method=post enctype=multipart/form-data>
-            <input type="hidden" name="type" id="type" value="example"/>
-            <input type="hidden" name="example-name" id="example-name" value="N/A"/>
             <div class="row">
                 <div class="col">
-
                     <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges</h1>
-
                     Tool for simple, fast and accurate calculation of QM-like partial atomic charges for Alphafold database structures.
                 </div>
             </div>
             {% include 'base/flash.html' %}
             <hr>
-
-            L8BU87 - small structure, no progress page showed
+            Some examples for testing (will be deleted):
             <br>
-            F1C650 - larger structure, progress page showed
+            L8BU87 -     518 atoms, 2.5 seconds
+            <br>
+            F1C650 -     2171 atoms, 3.7 seconds
+            <br>
+            Q08JQ9 -     4398 atoms, 5.19 seconds
+            <br>
+            A0A078BC61 - 6630 atoms, 7.3 seconds
+            <br>
+            A0A6M3GU96 - 8134 atoms, 10.23 seconds
+            <br>
+            Q5VSL9 -     13435 atoms, 15 seconds
+            <hr>
+            P0DSE4 - wrong protonation
+            <hr>
+            G9JPY0 - wrong alphafold
+            <hr>
+            <hr>
 
+            <input type="hidden" name="ph" value='7.2' />
             <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
-                <label style="color:black" for="title">Alphafold structure code:</label>
-                <input type="text" name="code"
-                       placeholder="" class="form-control"
-                       value="{{ request.form['code'] }}">
+                <label style="color:black" for="title">UniProt code:</label>
+                <input type="text" name="code" required="required"
+                       class="form-control">
             </div>
-            <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
-                <label style="color:black" for="title">Ph:</label>
-                <input type="text" name="ph"
-                       placeholder="7.2" class="form-control"
-                       value="{{ request.form['ph'] }}">
-            </div>
-
             <div class="form-group">
-                <button type="submit" class="btn btn-primary">Calculate charges</button>
+                <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Calculate charges</button>
+                <button type="submit" class="btn btn-secondary" name="action" value="settings">Setup computation</button>
+
+
             </div>
 
         </form>

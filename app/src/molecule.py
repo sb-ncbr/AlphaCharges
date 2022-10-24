@@ -1,35 +1,99 @@
 from rdkit import Chem
 import numpy as np
-from scipy.spatial.distance import cdist
-from scipy.spatial import KDTree
 from numba import jit
 from numba.typed import List
+from sklearn.neighbors import KDTree as kdtreen
+from io import StringIO
+import sys
 
 from multiprocessing import Pool
 
+
+class Substructure:
+    def __init__(self, residues):
+        self.residues = residues
+        self.number_of_residues = len(residues)
+        residues_numbers = set([res.number for res in self.residues])
+        self.valid_atoms = len(residues[0].coordinates)
+        self.surfaces = np.concatenate([res.surfaces for res in self.residues])
+        self.coordinates = np.concatenate([res.coordinates for res in self.residues], axis=0)
+        self.precalc_params = np.concatenate([res.precalc_params for res in self.residues], axis=0)
+
+        self.precalc_bond_hardnesses = np.concatenate([res.precalc_bond_hardnesses for res in self.residues])
+        precalc_bond_hardnesses = [h for res in self.residues for h in res.precalc_bond_hardnesses]
+
+        self.total_chg = sum([chg for res in residues for chg in res.propka_charges])
+
+        bonds = [bond for res in residues for bond in res.bonds]
+
+        for res in self.residues:
+            for irbi, irb, irbs in zip(res.connected_with,
+                                       res.connected_bonds,
+                                       res.connected_precalc_bond_hardnesses):
+                if irbi in residues_numbers:
+                    bonds.append(irb)
+                    precalc_bond_hardnesses.append(irbs)
+
+
+        reindexes = {}
+        c = 0
+        for res in residues:
+            for idx in res.indices:
+                reindexes[idx] = c
+                c += 1
+        reindexed_bonds = []
+        for a1,a2,type in bonds:
+            reindexed_bonds.append([reindexes[a1], reindexes[a2], type])
+        self.bonds = np.array(reindexed_bonds, dtype=np.int32)
+        self.precalc_bond_hardnesses = np.array(precalc_bond_hardnesses)
+
+
+
+class Residue:
+    def __init__(self,name,  number, coordinates, surfaces, propka_charges, indices, precalc_params):
+        self.name = name
+        self.number = number
+        self.coordinates = coordinates
+        self.mean = np.mean(self.coordinates, axis=0)
+        self.surfaces = surfaces
+        self.propka_charges = propka_charges
+        self.indices = indices
+        self.precalc_params = precalc_params
 
 class Molecule:
     def __init__(self,
                  code: str,
                  pdb_file: str):
 
-        self.cpu = 4
+        self.cpu = 4 # TODO!!!
         self.code = code
 
-        pqr_file_lines = open(pdb_file.replace(".pdb", ".pqr"), "r").readlines()[:-2]
-        self.total_chg = round(sum([float(line.split()[8]) for line in pqr_file_lines]))
 
-        rdkit_mol = Chem.MolFromPDBFile(pdb_file, removeHs=False, sanitize = True)
-        self.symbols = [atom.GetSymbol() for atom in rdkit_mol.GetAtoms()]
-        print(f"Number of atoms: {len(self.symbols)}")
+        pqr_file_lines = open(pdb_file.replace(".pdb", ".pqr"), "r").readlines()[:-2]
+
+        self.propka_charges = [float(line.split()[8]) for line in pqr_file_lines]
+        self.total_chg = round(sum(self.propka_charges))
+
+
+        Chem.WrapLogs()
+        sio = sys.stderr = StringIO()
+        self.rdkit_mol = Chem.MolFromPDBFile(pdb_file, removeHs=False, sanitize = True)
+        if self.rdkit_mol is None:
+            raise ValueError(f"{sio.getvalue().split()[6]} None")
+
+
+        self.symbols = [atom.GetSymbol() for atom in self.rdkit_mol.GetAtoms()]
+
+
         self.n_ats = len(self.symbols)
+        self.valid_atoms = self.n_ats
 
         bonds = []
         bond_types = {"SINGLE": 1,
                       "DOUBLE": 2,
                       "TRIPLE": 3,
                       "AROMATIC": 4}
-        for bond in rdkit_mol.GetBonds():
+        for bond in self.rdkit_mol.GetBonds():
             a1 = bond.GetBeginAtom().GetIdx()
             a2 = bond.GetEndAtom().GetIdx()
             bond_type = bond_types[str(bond.GetBondType())]
@@ -41,10 +105,10 @@ class Molecule:
         self.num_of_bonds = len(self.bonds)
 
         coordinates = []
-        for i in range(0, rdkit_mol.GetNumAtoms()):
-            pos = rdkit_mol.GetConformer().GetAtomPosition(i)
+        for i in range(0, self.rdkit_mol.GetNumAtoms()):
+            pos = self.rdkit_mol.GetConformer().GetAtomPosition(i)
             coordinates.append((pos.x, pos.y, pos.z))
-        self.coordinates = np.array(coordinates)
+        self.coordinates = np.array(coordinates, dtype=np.float32)
 
         ats_sreprba = self.create_ba()
         ats_sreprba2 = self.create_ba2()
@@ -61,9 +125,18 @@ class Molecule:
         bonds_srepr = bonds_srepr_modified
         # aromaticity of HIP
 
+        real_ats_types = {'C/CCC', 'C/CCCH', 'C/CCH', 'C/CCHH', 'C/CCHN', 'C/CCHO', 'C/CCN', 'C/CCO', 'C/CHHH',
+                          'C/CHHN', 'C/CHHO', 'C/CHHS',
+                          'C/CHN', 'C/CNO', 'C/COO', 'C/HHHS', 'C/HNN', 'C/NNN', 'H/C', 'H/N', 'H/O', 'H/S', 'N/CC',
+                          'N/CCC', 'N/CCH',
+                          'N/CCHH', 'N/CHH', 'N/CHHH', 'O/C', 'O/CH', 'S/CC', 'S/CH', 'S/CS'}
+
         # baex
         ats_srepr = []
         for i, (atba, atba2) in enumerate(zip(ats_sreprba, ats_sreprba2)):
+            if atba not in real_ats_types:
+                raise ValueError(f"{i+1} {atba}")
+
             if atba in ['H/N', "H/C", "O/C", "N/CHH", "N/CHHH", "C/CHHS", "C/CCC"]:
                 ats_srepr.append(atba2)
             elif atba == "O/CH":
@@ -72,7 +145,7 @@ class Molecule:
                 elif atba2 in ["O/CH/CHH", "O/CH/CCH"]:
                     ats_srepr.append("O/CH2")
                 else:
-                    exit("FATAL ERROR1")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "N/CCH":
                 if len(atba2.split("/")[2]) == 4:
                     ats_srepr.append("N/CCH1")
@@ -81,14 +154,14 @@ class Molecule:
                 elif len(atba2.split("/")[2]) == 3:
                     ats_srepr.append("N/CCH3")
                 else:
-                    exit("FATAL ERROR2")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CHN":
                 if atba2 == "C/CHN/CCCH":
                     ats_srepr.append("C/CHN1")
                 elif atba2 in ["C/CHN/CCN", "C/CHN/CCHN"]:
                     ats_srepr.append("C/CHN2")
                 else:
-                    exit("FATAL ERROR3")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CHHN":
                 if atba2 == "C/CHHN/CHOO":
                     ats_srepr.append("C/CHHN1")
@@ -99,21 +172,21 @@ class Molecule:
                 elif atba2 in ["C/CHHN/CHHHHH", "C/CHHN/CCHHH"]:
                     ats_srepr.append("C/CHHN4")
                 else:
-                    exit("FATAL ERROR4")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CHHH":
                 if atba2 == "C/CHHH/CHO":
                     ats_srepr.append("C/CHHH1")
                 elif atba2 in ["C/CHHH/CHN", "C/CHHH/CHH", "C/CHHH/CCH"]:
                     ats_srepr.append("C/CHHH2")
                 else:
-                    exit("FATAL ERROR10")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CCN":
                 if atba2 == "C/CCN/CCCCHH":
                     ats_srepr.append("C/CCN1")
                 elif atba2 in ["C/CCN/CCHHHHN", "C/CCN/CCHHHN"]:
                     ats_srepr.append("C/CCN2")
                 else:
-                    exit("FATAL ERROR5")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CCHN":
                 if atba2.split("/")[2].count("O") == 1:
                     ats_srepr.append("C/CCHN1")
@@ -122,7 +195,7 @@ class Molecule:
                 elif atba2.split("/")[2].count("O") == 3:
                     ats_srepr.append("C/CCHN3")
                 else:
-                    exit("FATAL ERROR6")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CCHH":
                 if atba2.split("/")[2].count("O") == 2:
                     ats_srepr.append("C/CCHH1")
@@ -134,7 +207,7 @@ class Molecule:
                                "C/CCHH/CCCHHN"]:
                     ats_srepr.append("C/CCHH4")
                 else:
-                    exit("FATAL ERROR7")
+                    raise ValueError(f"{i+1} {atba}")
             elif atba == "C/CCH":
                 if atba2.split("/")[2].count("O") == 1:
                     ats_srepr.append("C/CCH1")
@@ -155,11 +228,13 @@ class Molecule:
                     else:
                         ats_srepr.append("C/CCH3")
                 else:
-                    exit("FATAL ERROR8")
+                    raise ValueError(f"{i+1} {atba}")
             else:
                 ats_srepr.append(atba)
         self.ats_srepr = List(ats_srepr)
+        # self.ats_srepr = ats_srepr
         self.bonds_srepr = List(bonds_srepr)
+        # self.bonds_srepr = bonds_srepr
 
     def create_ba(self) -> list:
         bonded_ats = [[] for _ in range(self.n_ats)]
@@ -185,30 +260,176 @@ class Molecule:
         return [f"{symbol}/{''.join(sorted(bonded_ats))}/{''.join(sorted(bonded_bonded_ats))}"
                 for symbol, bonded_ats, bonded_bonded_ats in zip(self.symbols, bonded_ats, bonded_bonded_ats)]
 
-    def calculate_distace_matrix(self):
-        self.distance_matrix = cdist(self.coordinates, self.coordinates)
 
-        # from time import time
-        #
-        #
-        #
-        # s = time()
-        # distance_matrix = np.empty((self.n_ats, self.n_ats), dtype=np.float32)
-        # with Pool(self.cpu) as p:
-        #     p.starmap(calculate_distance_matrix_partial, [[distance_matrix, self.coordinates, index] for index in range(self.n_ats)])
-        # print(time()-s)
-        # exit()
-        #
-
-
-
+    # def calculate_surfaces(self) -> np.array:
+    #     num_pts = 1000
+    #     kdtree = KDTree(self.coordinates, leafsize=50)
+    #     vdw = {"H": 1.17183574,
+    #            "C": 1.74471729,
+    #            "N": 1.59013069,
+    #            "O": 1.46105651,
+    #            "S": 1.84999765}
+    #     with Pool(self.cpu) as p:
+    #         surfaces = p.starmap(f, [[index, at, self.coordinates, self.symbols, kdtree, num_pts, vdw] for index, at in enumerate(self.symbols)])
+    #     self.surfaces = np.array(surfaces)
+    #     print(self.surfaces[:10])
 
     def calculate_surfaces(self) -> np.array:
         num_pts = 1000
-        kdtree = KDTree(self.coordinates, leafsize=50)
+        kdtree = kdtreen(self.coordinates, leaf_size=40)
         with Pool(self.cpu) as p:
-            surfaces = p.starmap(f, [[index, at, self.coordinates, self.symbols, kdtree, num_pts] for index, at in enumerate(self.symbols)])
+            surfaces = p.starmap(f2, [[index, at, self.coordinates, self.symbols, kdtree, num_pts] for index, at in enumerate(self.symbols)])
         self.surfaces = np.array(surfaces)
+
+
+
+
+    def create_submolecules(self):
+        self.residues = []
+        number = 1
+        start_index = 0
+        residues_numbers = []
+        residues_names = []
+        for i, at in enumerate(self.rdkit_mol.GetAtoms()):
+            if at.GetPDBResidueInfo().GetResidueNumber() == number + 1:
+                self.residues.append(Residue(residues_names[start_index],
+                                             number-1,
+                                             self.coordinates[start_index: i],
+                                             self.surfaces[start_index: i],
+                                             self.propka_charges[start_index: i],
+                                             [x for x in range(start_index, i)],
+                                             self.precalc_params[start_index: i]))
+                start_index = i
+                number += 1
+            residues_names.append(at.GetPDBResidueInfo().GetResidueName())
+            residues_numbers.append(number)
+
+        self.residues.append(Residue(residues_names[start_index],
+                                     number-1,
+                                     self.coordinates[start_index: ],
+                                     self.surfaces[start_index: ],
+                                     self.propka_charges[start_index: ],
+                                     [x for x in range(start_index, self.n_ats)],
+                                     self.precalc_params[start_index: ]))
+
+
+        from collections import defaultdict
+
+        residue_bonds = defaultdict(list)
+        residue_bonds_srepr = defaultdict(list)
+        inter_residues_bonds = defaultdict(list)
+        inter_residues_bonds_indices = defaultdict(list)
+        inter_residues_bonds_srepr = defaultdict(list)
+
+        for bond, bond_s_repr in zip(self.bonds, self.precalc_bond_hardnesses):
+            re0 = residues_numbers[bond[0]]-1
+            re1 = residues_numbers[bond[1]]-1
+            if re0  == re1:
+                residue_bonds[re0].append(bond)
+                residue_bonds_srepr[re0].append(bond_s_repr)
+
+            elif re0 < re1:
+                inter_residues_bonds_indices[re0].append(re1)
+                inter_residues_bonds[re0].append(bond)
+                inter_residues_bonds_srepr[re0].append(bond_s_repr)
+
+            elif re0 > re1:
+                inter_residues_bonds_indices[re1].append(re0)
+                inter_residues_bonds[re1].append(bond)
+                inter_residues_bonds_srepr[re1].append(bond_s_repr)
+
+        for residuum in self.residues:
+            residue_number = residuum.number
+            residuum.bonds = residue_bonds[residue_number]
+            residuum.precalc_bond_hardnesses = residue_bonds_srepr[residue_number]
+            residuum.connected_with = inter_residues_bonds_indices[residue_number]
+            residuum.connected_bonds =  inter_residues_bonds[residue_number]
+            residuum.connected_precalc_bond_hardnesses = inter_residues_bonds_srepr[residue_number]
+
+
+
+        # residues created
+
+
+        residues_averages = [res.mean for res in self.residues]
+        res_kdtree = kdtreen(residues_averages, leaf_size=50)
+
+        self.substructures = []
+        for res in self.residues:
+            residues = [res]
+
+            # residues = [res]
+            # ats_srepr = [res.ats_srepr]
+            # bonds = [res.bonds]
+            # bonds_srepr = [res.bonds_srepr]
+            # coordinates = [res.coordinates]
+            # total_chg = [res.total_chg]
+            # surfaces = [res.surfaces]
+            distances, indices = res_kdtree.query([res.mean], k=len(residues_averages))
+            distances = distances[0][1:]
+            indices = indices[0][1:]
+            for d,i in zip(distances, indices):
+                # L8BU87
+                # 10
+                # 0.0060993135 0.0059737563
+                # 0.001192173 0.00055343815
+                # 15
+                # 0.0042468905 0.003844604
+                # 0.00056939654 0.00023542286
+                # 20
+                # 0.0018594861  0.0016306043
+                # 0.00040998575 0.00017158456
+
+                # Q08JQ9
+                # 10
+                # 0.015948653 0.015959797
+                # 0.001042911 0.00090502965
+                # 15
+                # 0.010041103 0.010070562
+                # 0.000705804 0.0006613233
+                # 20
+                # 0.006737152 0.0068458356
+                # 0.0004682382 0.0004462856
+
+
+
+                # A0A078BC61
+                # 10
+                # 0.020253778 0.020560622
+                # 0.00170244 0.0015238477
+                # 15
+                # 0.022353724 0.022883072
+                # 0.0014084285 0.0013066066
+                # 20
+                # 0.015325993
+                # 0.001171189
+
+
+                amk_radius = {'ALA': 2.48013472197102,
+                             'ARG': 4.861893836930157,
+                             'ASN': 3.223781749594369,
+                             'ASP': 2.803611164950305,
+                             'CYS': 2.5439900881094437,
+                             'GLN': 3.845641228833085,
+                             'GLU': 3.396388805414707,
+                             'GLY': 2.145581026362788,
+                             'HIS': 3.837607343643752,
+                             'ILE': 3.4050022674834866,
+                             'LEU': 3.5357084005904222,
+                             'LYS': 4.452109446576905,
+                             'MET': 4.18214798399969,
+                             'PHE': 4.117010781374703,
+                             'PRO': 2.8418414713774762,
+                             'SER': 2.499710830364658,
+                             'THR': 2.74875502488962,
+                             'TRP': 4.683613811874498,
+                             'TYR': 4.514843482397014,
+                             'VAL': 2.951599144669813}
+
+                if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 5:
+                    residues.append(self.residues[i])
+            self.substructures.append(Substructure(residues))
+
 
 
 @jit(nopython=True, cache=True)
@@ -220,29 +441,48 @@ def dist(grid, c, d):
             indices_to_remove.append(gi)
     return indices_to_remove
 
+#
+#
+# @jit(nopython=True, cache=True)
+# def dd(x,y):
+#     a, b, c = x
+#     e, f, g = y
+#     return np.sqrt((a - e) ** 2 + (b - f) ** 2 + (c - g) ** 2)
+#
+
+
 @jit(nopython=True, cache=True)
 def fibonacci_sphere(xc, yc, zc, radius, num_pts):
-    indices = np.arange(0, num_pts, dtype=np.float64) + 0.5
+    indices = np.arange(0, num_pts, dtype=np.float32) + 0.5
     phi = np.arccos(1 - 2 * indices / num_pts)
     theta = np.pi * (1 + 5 ** 0.5) * indices
     x, y, z = np.cos(theta) * np.sin(phi) * radius, np.sin(theta) * np.sin(phi) * radius, np.cos(phi) * radius
     return np.column_stack((x + xc, y + yc, z + zc))
 
-def f(index, at, coordinates, symbols, kdtree, num_pts):
+# def f(index, at, coordinates, symbols, kdtree, num_pts, vdw):
+#     grid = fibonacci_sphere(*coordinates[index], vdw[at[0]], num_pts)
+#     near_atoms = kdtree.query_ball_point(coordinates[index], vdw["S"] + vdw[at])
+#     near_atoms.remove(index)
+#     for index_near in near_atoms:
+#         d = dd(coordinates[index], coordinates[index_near])
+#         if d < vdw[symbols[index]] + vdw[symbols[index_near]]:
+#             grid = np.delete(grid, dist(grid, coordinates[index_near], vdw[symbols[index_near][0]]), 0)
+#     return len(grid)/num_pts
+
+
+def f2(index, at, coordinates, symbols, kdtree, num_pts):
     vdw = {"H": 1.17183574,
            "C": 1.74471729,
            "N": 1.59013069,
            "O": 1.46105651,
            "S": 1.84999765}
     grid = fibonacci_sphere(*coordinates[index], vdw[at[0]], num_pts)
-    near_atoms = kdtree.query_ball_point(coordinates[index], vdw["S"] + vdw[at])
-    near_atoms.remove(index)
-    for index_near in near_atoms:
-        grid = np.delete(grid, dist(grid, coordinates[index_near], vdw[symbols[index_near][0]]), 0)
+    distances, indices = kdtree.query([coordinates[index]], k=30)
+    distances = distances[0][1:]
+    indices = indices[0][1:]
+    atom_radius = vdw[symbols[index]]
+    for i, index_near in enumerate(indices):
+        near_atom_radius = vdw[symbols[index_near]]
+        if distances[i] < atom_radius + near_atom_radius:
+            grid = np.delete(grid, dist(grid, coordinates[index_near], near_atom_radius), 0)
     return len(grid)/num_pts
-
-
-def calculate_distance_matrix_partial(distance_matrix, coordinates, index):
-    r = cdist([coordinates[index]], coordinates[index:])
-    distance_matrix[index, index:] = r
-    distance_matrix[index:, index] = r

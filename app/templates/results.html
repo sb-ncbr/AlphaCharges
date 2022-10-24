@@ -18,7 +18,7 @@
         </div>
 
         <p>
-            <span style="font-weight:bold"> Structure Alphafold code:</span> {{ code }}
+            <span style="font-weight:bold"> UniProt code:</span> {{ code }}
 
         </p>
         <p>
@@ -26,6 +26,10 @@
         </p>
         <p>
             <span style="font-weight:bold"> pH:</span> {{ ph }}
+        </p>
+
+        <p>
+            <span style="font-weight:bold"> Calculation time:</span> {{ total_time }} seconds
         </p>
 
         <hr>
@@ -97,7 +101,7 @@
 
         <div class="row">
             <div class="col-7">
-                <a href="{{ url_for('download_charges', r=comp_id) }}" class="btn btn-success" id="download">Download
+                <a href="{{ url_for('download_charges', ID=ID) }}" class="btn btn-success" id="download">Download
                     charges</a>
             </div>
             <div class="col text-right">

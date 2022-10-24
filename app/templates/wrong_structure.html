@@ -1,0 +1,35 @@
+{% extends 'base/base.html' %}
+
+{% block body %}
+    <div class="container p-3">
+        <div class="d-none mt-3 d-lg-block"></div>
+        <form method=post enctype=multipart/form-data>
+            <div class="row">
+                <div class="col">
+                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges - <span>Calculation settings</span></h1>
+                </div>
+            </div>
+            <p>
+            <span style="font-weight:bold"> UniProt code:</span> {{ code }}
+            </p>
+            <hr>
+            {% include 'base/flash.html' %}
+
+    <br>    <br>
+            There is an error with atom with index {{ message }}! The structure is probably incorrectly predicted by AlphaFold, or incorrectly protonated by pdb2pqr.
+                <br>    <br>    <br>    <br>
+        <div class="row">
+                <div class="col text-left"><a href="{{  url_for('download_wrong_structure', ID=ID)  }}" class="btn btn-primary">Download structure</a></div>
+
+                <div class="col text-right"><a href="/" class="btn btn-primary">Back to main page</a></div>
+                        </div>
+
+        </form>
+
+        <hr>
+        {% include 'base/elixir.html' %}
+        <hr>
+        {% include 'base/footer.html' %}
+    </div>
+
+{% endblock body %}

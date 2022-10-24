@@ -1,88 +1,144 @@
-from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, abort
-from time import time, sleep
+from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, abort, Flask
+from time import time
 import requests
 from src.molecule import Molecule
 from src.SQEqp_h import SQEqp_h
-import shutil
 import os
-from flask import Flask
-
-application = Flask(__name__)
-
-
-application.jinja_env.trim_blocks = True
-application.jinja_env.lstrip_blocks = True
-
-application.config['SECRET_KEY'] = "asdfasdf"
-
 import shutil
+from multiprocessing import Pool
+from src.SQEqp_h import calculate_charges
+import numpy as np
+import zipfile
+from datetime import datetime
+
+
+from numba import jit
+@jit(nopython=True, cache=True) # paralelizovat to? Zkusit na velké struktuře
+def precalculate_parameters(atomic_types, bonds_types, surfaces, parameters, bond_hardnesses):
+    n_atoms = len(atomic_types)
+    n_bonds = len(bonds_types)
+
+    precalc_params = np.empty((n_atoms, 4), dtype=np.float32)
+    precalc_bond_hardnesses = np.empty(n_bonds, dtype=np.float32)
+
+    for i in range(n_atoms): # pokud nebudeme paralelizovat, tak nazipovat!
+
+
+        symbol_i = atomic_types[i]
+        surface = surfaces[i]
+
+        electronegativity, hardness, width, q0, q0_cor, hardness_cor, electronegativity_cor, width_cor = parameters[symbol_i]
+        precalc_params[i] = (-electronegativity + electronegativity_cor * surface,
+                         hardness + hardness_cor * surface,
+                         2 * (width + width_cor * surfaces[i]) ** 2,
+                         q0 + q0_cor * surface)
+
+    for i in range(n_bonds): # upravit podle toho, zda budeme paralelizovat
+        precalc_bond_hardnesses[i] = bond_hardnesses[bonds_types[i]]
+
+    return precalc_params, precalc_bond_hardnesses
+
+
 
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
+
+try:
+    os.mkdir(f"{root_dir}/calculated_structures")
+except FileExistsError:
+    pass
+
 pdb_to_pqr_path = shutil.which("pdb2pqr30")
 
 
 
 
+application = Flask(__name__)
+application.jinja_env.trim_blocks = True
+application.jinja_env.lstrip_blocks = True
+application.config['SECRET_KEY'] = "asdfasdf"
+empirical_method = SQEqp_h(f"parameters/parameters.json")
 
 
+# calculation time do flash?
+
+# upgradovat věci od tomáše
+
+# kontrola přímo v javascriptu
+
+# zkontrolovat rychlost
+
+# kontrola atomových typů
+
+# dodělat organizmus a název proteinu
+
+# upravit cachování ať nežere tolik paměti
+
+# logování
+
+def page_log(data_dir,
+             step,
+             log,
+             delete_last_line=False):
+    log = f"<p><span style='font-weight:bold'> Step {step}/6:</span> {log}</p>\n"
+    logs = open(f"{data_dir}/page_log.txt").readlines()
+    if delete_last_line:
+        logs = "".join(logs[:-1]) + log
+    else:
+        logs = "".join(logs) + log
+    with open(f"{data_dir}/page_log.txt", "w") as page_log_file:
+        page_log_file.write(logs)
 
 
-
-
-
-
-request_data = {}
 
 @application.route('/', methods=['GET', 'POST'])
 def main_site():
-    # todo jak čistit request_data? Jak dlouho by měly být výsledky dostupné?
-    # todo za jak dlouho smazat tmp_disr?
     if request.method == 'POST':
         code = request.form['code']
-        ph = request.form['ph']
+        action = request.form["action"]
+        if action == "settings":
+            return render_template('settings.html',
+                                   code=code)
+        elif action == "calculate charges":
+            ph = request.form['ph']
 
-        if not code:
-            flash('Alphafold code is required!')
-            return render_template('index.html')
-        if ph:
+
             try:
                 ph = float(ph)
             except ValueError:
                 flash('pH must be a float value!')
-                return render_template('index.html')
-            if not 0 < ph < 14:
+                return render_template('settings.html',
+                                        code=code)
+            if not 0 <= ph <= 14:
                 flash('pH value must be between 1-14!')
+                return render_template('settings.html',
+                                        code=code)
+
+
+
+
+            ID = f"{code}_{ph}"
+            data_dir = f"{root_dir}/calculated_structures/{ID}"
+
+            # check whether the structure with the given setting has already been calculated
+            if os.path.isdir(f"{root_dir}/calculated_structures/{ID}"):
+                return redirect(url_for('results',
+                                         ID=ID))
+            os.mkdir(data_dir)
+            os.mknod(f"{data_dir}/page_log.txt")
+
+            s = time()
+            response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v3.pdb")
+            if response.status_code != 200:
+                # shutil.rmtree(data_dir)
+                os.system(f"rm -r {data_dir}")
+                flash(f'No structure with code {code} found in the AlphaFold database.')
                 return render_template('index.html')
-        if not ph:
-            ph = 7.2
+            with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
+                pdb_file.write(response.text)
+            page_log(data_dir, 1, f"Structure downloaded. ({round(time() - s, 2)}s)")
 
-        s = time()
-        response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v3.pdb")
-        if response.status_code != 200:
-            flash(f'Structure is not downloaded. Code "{code}" si probably wrong!')
-            return render_template('index.html')
-        print(f"Structure downloaded. ({time() - s})")
-        n_heavy_atoms = response.text.count("ATOM")
-        ID = f"{code}_{ph}"
-        tmp_dir = f"{root_dir}/calculate_{ID}"
-        try:
-            os.mkdir(tmp_dir)
-        except FileExistsError:
-            shutil.rmtree(tmp_dir)
-            os.mkdir(tmp_dir)
-
-        request_data[ID] = {}
-        request_data[ID]["code"] = code
-        request_data[ID]["ph"] = ph
-        request_data[ID]["pdb_text"] = response.text
-        request_data[ID]["tmp_dir"] = tmp_dir
-        request_data[ID]["progress"] = f"<p><span style='font-weight:bold'> Step 1/6:</span> Structure downloaded. ({round(time() - s, 2)}s)</p>"
-
-        if n_heavy_atoms < 500:
-            return redirect(url_for('calculation',
-                                    ID=ID))
-        else:
+            # start calculation
             return render_template('computation_progress.html',
                                    ID=ID,
                                    code=code,
@@ -95,104 +151,173 @@ def main_site():
 
 @application.route("/calculation")
 def calculation():
+    # download and save PDB file (and cif todo)
     ID = request.args.get("ID")
-    calculation_data = request_data[ID]
-    code = calculation_data["code"]
-    ph = calculation_data["ph"]
-    tmp_dir = calculation_data["tmp_dir"]
-    pdb_text = calculation_data["pdb_text"]
+    code, ph = ID.split("_")
+    data_dir = f"{root_dir}/calculated_structures/{ID}"
+    with open(f"{root_dir}/logs.txt", "a") as log_file:
+        log_file.write(f"{request.remote_addr} {code} {ph} {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
 
 
+    page_log(data_dir,2, "Protonation of structure...")
     s = time()
-    pdb_file = os.path.join(tmp_dir, f"structure_{code}.pdb")
-
-    open(pdb_file, "w").write(pdb_text)
+    pdb_file = f"{data_dir}/{code}.pdb"
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
     os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --with-ph {ph} "
-              f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {tmp_dir}/propka.log 2>&1 ")
-    print(f"Structure protonated. ({time() - s})")
-    request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 2/6:</span> Structure protonated. ({round(time() - s, 2)}s) </p>"
+              f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {data_dir}/propka.log 2>&1 ")
+    os.system(f"obabel -ipdb {pdb_file_with_hydrogens} -ommcif -O {data_dir}/{code}_added_H.cif")
+    page_log(data_dir,2, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
 
 
+
+    page_log(data_dir,3, "Loading of molecule...")
     s = time()
-    molecule = Molecule(code, pdb_file_with_hydrogens)
-    print(f"Molecule loaded. ({time() - s})")
-    request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 3/6:</span> Molecule loaded. ({round(time() - s, 2)}s) </p>"
+    try:
+        molecule = Molecule(code, pdb_file_with_hydrogens)
+    except ValueError as e:
+        # výsledky smazat po downloadování
+        return redirect(url_for('wrong_structure',
+                                ID=ID,
+                                code=ID.split("_")[0],
+                                message=str(e).split()[0]))
 
-    s = time()
-    molecule.calculate_distace_matrix()
-    print(f"Distance matrix calculated. ({time() - s})")
-    request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 4/6:</span> Distance matrix calculated. ({round(time() - s, 2)}s) </p>"
 
+
+
+    page_log(data_dir,3, f"Molecule loaded. ({round(time() - s, 2)}s)", delete_last_line=True)
+
+
+    page_log(data_dir,4, "Calculation of solvatable surface...")
     s = time()
     molecule.calculate_surfaces()
     print(f"Surface calculated. ({time() - s})")
-    request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 5/6:</span> Solvatable surface caluclated. ({round(time() - s, 2)}s) </p>"
+    page_log(data_dir,4, f"Solvatable surface calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
 
+
+    page_log(data_dir,5, "Creation of submolecules...")
     s = time()
-    empirical_method = SQEqp_h(f"{root_dir}/parameters/parameters.json")
-    request_data[ID]["pdb_file"] = open(pdb_file_with_hydrogens, "r").read()
-    charges = empirical_method.calculate_charges(molecule)
-    print(f"Charges calculated. ({time() - s})")
-    request_data[ID]["progress"] += f"<p><span style='font-weight:bold'> Step 6/6:</span> Charges calculated. ({round(time() - s, 2)}s) </p>"
+    molecule.precalc_params, molecule.precalc_bond_hardnesses = precalculate_parameters(molecule.ats_srepr,
+                                                                                        molecule.bonds_srepr,
+                                                                                        molecule.surfaces,
+                                                                                        empirical_method.parameters,
+                                                                                        empirical_method.bond_hardnesses)
+    molecule.create_submolecules()
+    page_log(data_dir,5, f"Submolecules created. ({round(time() - s, 2)}s)", delete_last_line=True)
 
-    request_data[ID]["charges"] = f"{molecule.code}\n" + ' '.join([str(charge) for charge in charges]) + " \n"
-    request_data[ID]["n_ats"] = molecule.n_ats
-    request_data[ID]["chg_range"] = round(max(abs(charges)), 4)
-    return render_template('results.html',
-                           ID=ID,
-                           chg_range=request_data[ID]['chg_range'],
+
+    page_log(data_dir,6, "Calculation of partial atomic charges...")
+    s = time()
+    with Pool(2) as p:
+        all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
+    all_charges = [chg for chgs in all_charges for chg in chgs]
+    all_charges -= (np.sum(all_charges) - molecule.total_chg) / len(all_charges)
+    charges = all_charges
+    with open(f"{data_dir}/charges.txt", "w") as chg_file:
+        chg_file.write(f"{molecule.code}\n" + ' '.join([str(charge) for charge in charges]) + " \n")
+    pqr_file_lines = open(f"{pdb_file[:-4]}_added_H.pqr").readlines()
+    c = 0
+    new_lines = []
+    for line in pqr_file_lines:
+        if line[:4] == "ATOM":
+            new_lines.append(line[:54] + '{:>8.4f}'.format(charges[c])  + line[62:])
+            c += 1
+        else:
+            new_lines.append(line)
+    with open(f"{pdb_file[:-4]}_added_H.pqr", "w") as pqr_file:
+        pqr_file.write("".join(new_lines))
+
+    page_log(data_dir,6, f"Partial atomic charges calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
+    return redirect(url_for('results',
+                            ID=ID))
+
+
+
+
+@application.route('/wrong_structure')
+def wrong_structure():
+    ID = request.args.get('ID')
+    code, ph = ID.split("_")
+    message = request.args.get("message")
+    return render_template('wrong_structure.html',
                            code=code,
-                           n_ats=request_data[ID]['n_ats'],
-                           ph=ph)
+                           ID=ID,
+                           message=message)
 
 
 @application.route('/progress')
 def progress():
     ID = request.args.get('ID')
-    return request_data[ID]["progress"]
-
+    data_dir = f"{root_dir}/calculated_structures/{ID}"
+    return open(f"{data_dir}/page_log.txt", "r").read()
 
 
 
 @application.route('/results')
 def results():
     ID = request.args.get('ID')
-    results = request_data[ID]
+    data_dir = f"{root_dir}/calculated_structures/{ID}"
+    code, ph = ID.split("_")
+    try:
+        absolute_charges = [abs(float(x)) for x in open(f"{data_dir}/charges.txt", "r").readlines()[1].split()]
+    except FileNotFoundError:
+        # shutil.rmtree(data_dir)
+        os.system(f"rm {data_dir}")
+        flash(f'Alphafold or propka error with structure {ID}!')
+        return redirect(url_for('main_site'))
+
+    chg_range = round(max(absolute_charges), 4)
+    n_ats = len(absolute_charges)
+    total_time = round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f"{data_dir}/page_log.txt").readlines()]), 2)
     return render_template('results.html',
                            ID=ID,
-                           chg_range=results['chg_range'],
-                           code=results['code'],
-                           n_ats=results['n_ats'],
-                           ph=results['ph'])
+                           chg_range=chg_range,
+                           code=code,
+                           n_ats=n_ats,
+                           total_time=total_time,
+                           ph=ph)
 
 
+@application.route('/download_wrong_structure')
+def download_wrong_structure():
+    ID = request.args.get("ID")
+    code, _ = ID.split("_")
+    data_dir = f"{root_dir}/calculated_structures/{ID}"
+    with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
+        zip.write(f"{data_dir}/{code}.pdb", arcname=f"{code}_charges.txt")
+        zip.write(f"{data_dir}/{code}_added_H.pdb", arcname=f"{code}.pdb")
+    return send_from_directory(data_dir, f'{ID}.zip', as_attachment=True)
 
 
 @application.route('/download')
 def download_charges():
     ID = request.args.get("ID")
-    tmp_dir = request_data[ID]['tmpdir']
-    with open(os.path.join(tmp_dir, "charges.txt"), "w") as chg_file:
-        chg_file.write(request_data[ID]['charges'])
-
-    return send_from_directory(tmp_dir, 'charges.txt', as_attachment=True)
+    code, _ = ID.split("_")
+    data_dir = f"{root_dir}/calculated_structures/{ID}"
+    with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
+        zip.write(f"{data_dir}/charges.txt", arcname=f"{code}_charges.txt")
+        zip.write(f"{data_dir}/{code}_added_H.pdb", arcname=f"{code}.pdb")
+        zip.write(f"{data_dir}/{code}_added_H.pqr", arcname=f"{code}.pqr")
+        zip.write(f"{data_dir}/{code}_added_H.cif", arcname=f"{code}.cif")
+    return send_from_directory(data_dir, f'{ID}.zip', as_attachment=True)
 
 
 @application.route('/structure')
 def get_structure():
     ID = request.args.get("ID")
-    return Response(request_data[ID]["pdb_file"], mimetype='text/plain')
+    return Response(open(f"{root_dir}/calculated_structures/{ID}/{ID.split('_')[0]}_added_H.pdb", "r").read(),
+                    mimetype='text/plain')
 
 
 @application.route('/format')
 def get_format():
     # todo remove it
-    return Response("PDB", mimetype='text/plain')
+    return Response("PDB",
+                    mimetype='text/plain')
 
 
 @application.route('/charges')
 def get_charges():
     ID = request.args.get("ID")
-    return Response(request_data[ID]["charges"], mimetype='text/plain')
+    return Response(open(f"{root_dir}/calculated_structures/{ID}/charges.txt", "r").read(),
+                    mimetype='text/plain')
 
