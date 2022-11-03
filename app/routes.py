@@ -57,9 +57,9 @@ application = Flask(__name__)
 application.jinja_env.trim_blocks = True
 application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = "asdfasdf"
-empirical_method = SQEqp_h(f"parameters/parameters.json")
+empirical_method = SQEqp_h(f"{root_dir}/parameters/parameters.json")
 
-
+n_cpu = 2
 # calculation time do flash?
 
 # upgradovat věci od tomáše
@@ -74,7 +74,13 @@ empirical_method = SQEqp_h(f"parameters/parameters.json")
 
 # upravit cachování ať nežere tolik paměti
 
-# logování
+ # updatovat python
+
+ # change molecule.code na molecule.name
+ 
+ # zkontrolovat, zda funguje rdkit exception!!
+
+ # dát v results data o molekule a viev vedle sebe
 
 def page_log(data_dir,
              step,
@@ -123,7 +129,8 @@ def main_site():
             # check whether the structure with the given setting has already been calculated
             if os.path.isdir(f"{root_dir}/calculated_structures/{ID}"):
                 return redirect(url_for('results',
-                                         ID=ID))
+                                        ID=ID,
+                                        from_cache=True))
             os.mkdir(data_dir)
             os.mknod(f"{data_dir}/page_log.txt")
 
@@ -132,7 +139,7 @@ def main_site():
             if response.status_code != 200:
                 # shutil.rmtree(data_dir)
                 os.system(f"rm -r {data_dir}")
-                flash(f'No structure with code {code} found in the AlphaFold database.')
+                flash(f'No structure with code "{code}" found in the AlphaFold database.')
                 return render_template('index.html')
             with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
                 pdb_file.write(response.text)
@@ -165,6 +172,7 @@ def calculation():
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
     os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {data_dir}/propka.log 2>&1 ")
+    # add root for obabel!!!!
     os.system(f"obabel -ipdb {pdb_file_with_hydrogens} -ommcif -O {data_dir}/{code}_added_H.cif")
     page_log(data_dir,2, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
 
@@ -179,7 +187,7 @@ def calculation():
         return redirect(url_for('wrong_structure',
                                 ID=ID,
                                 code=ID.split("_")[0],
-                                message=str(e).split()[0]))
+                                message=str(e)))
 
 
 
@@ -189,7 +197,7 @@ def calculation():
 
     page_log(data_dir,4, "Calculation of solvatable surface...")
     s = time()
-    molecule.calculate_surfaces()
+    molecule.calculate_surfaces(cpu=n_cpu)
     print(f"Surface calculated. ({time() - s})")
     page_log(data_dir,4, f"Solvatable surface calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
 
@@ -207,7 +215,7 @@ def calculation():
 
     page_log(data_dir,6, "Calculation of partial atomic charges...")
     s = time()
-    with Pool(2) as p:
+    with Pool(n_cpu) as p:
         all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
     all_charges = [chg for chgs in all_charges for chg in chgs]
     all_charges -= (np.sum(all_charges) - molecule.total_chg) / len(all_charges)
@@ -262,12 +270,16 @@ def results():
     except FileNotFoundError:
         # shutil.rmtree(data_dir)
         os.system(f"rm {data_dir}")
-        flash(f'Alphafold or propka error with structure {ID}!')
+        flash(f'Alphafold or propka error with structure "{code}"!')
         return redirect(url_for('main_site'))
 
     chg_range = round(max(absolute_charges), 4)
     n_ats = len(absolute_charges)
-    total_time = round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f"{data_dir}/page_log.txt").readlines()]), 2)
+    total_time = f"{round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f'{data_dir}/page_log.txt').readlines()]), 2)} seconds"
+    if request.args.get("from_cache"):
+        total_time = f"{total_time} (The charges have already been calculated earlier and the results are taken from memory.)"
+
+
     return render_template('results.html',
                            ID=ID,
                            chg_range=chg_range,
@@ -283,8 +295,8 @@ def download_wrong_structure():
     code, _ = ID.split("_")
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
-        zip.write(f"{data_dir}/{code}.pdb", arcname=f"{code}_charges.txt")
-        zip.write(f"{data_dir}/{code}_added_H.pdb", arcname=f"{code}.pdb")
+        zip.write(f"{data_dir}/{code}.pdb", arcname=f"{code}.pdb")
+        zip.write(f"{data_dir}/{code}_added_H.pdb", arcname=f"{code}_added_H.pdb")
     return send_from_directory(data_dir, f'{ID}.zip', as_attachment=True)
 
 
@@ -295,9 +307,9 @@ def download_charges():
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
         zip.write(f"{data_dir}/charges.txt", arcname=f"{code}_charges.txt")
-        zip.write(f"{data_dir}/{code}_added_H.pdb", arcname=f"{code}.pdb")
-        zip.write(f"{data_dir}/{code}_added_H.pqr", arcname=f"{code}.pqr")
-        zip.write(f"{data_dir}/{code}_added_H.cif", arcname=f"{code}.cif")
+        zip.write(f"{data_dir}/{code}_added_H.pdb", arcname=f"{code}_added_H.pdb")
+        zip.write(f"{data_dir}/{code}_added_H.pqr", arcname=f"{code}_added_H.pqr")
+        zip.write(f"{data_dir}/{code}_added_H.cif", arcname=f"{code}_added_H.cif")
     return send_from_directory(data_dir, f'{ID}.zip', as_attachment=True)
 
 

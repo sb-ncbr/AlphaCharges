@@ -36,7 +36,7 @@ def calculate_charges(molecule):
                               molecule.coordinates,
                               molecule.total_chg,
                               molecule.precalc_params)
-    return charges[:molecule.valid_atoms]
+    return charges[:molecule.calculated_atoms]
 
 
 
