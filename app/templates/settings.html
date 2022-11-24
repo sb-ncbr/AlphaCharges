@@ -15,14 +15,69 @@
             <hr>
             {% include 'base/flash.html' %}
 
-
-
             <input type="hidden" name="code" value='{{ code }}' />
-            <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
-                <label style="color:black" for="title">pH:</label>
-                <input type="text" name="ph" class="form-control" value="7.2">
 
+
+            <div class="row">
+                <div class="col-md-6">
+            <div class="form-group col-sm-6 col-lg-5">
+                <label style="color:black; font-weight:bold;" for="title">Protonate in pH:</label>
+                <input type="text" name="ph" class="form-control" value="7.2">
             </div>
+                    <br>
+            <fieldset class="form-group mb-0">
+                <legend class="col-form-label col pb-0 pt-0" style="color:black; font-weight:bold;">Structure optimization:</legend>
+                        <div class="col">
+                            <div class="form-check form-check-inline col">
+                                <input class="form-check-input" type="radio" name="structure_optimization" id="structure_optimization_false"
+                                       value="false" checked>
+                                <label class="form-check-label" for="structure_optimization_false">No (fast, less accurate partial atomic charges)</label>
+                            </div>
+                            <div class="form-check form-check-inline col">
+                                <input class="form-check-input" type="radio" name="structure_optimization" id="structure_optimization_true"
+                                       value="true">
+                                <label class="form-check-label" for="colors_structure">Yes (slower, maximally accurate partial atomic charges.)</label>
+                            </div>
+                        </div>
+            </fieldset>
+            <br>
+            <br>
+            <fieldset class="form-group mb-0">
+                <legend class="col-form-label col pb-0 pt-0" style="color:black; font-weight:bold;">Basis set:</legend>
+                        <div class="col">
+                            <div class="form-check form-check-inline col">
+                                <input class="form-check-input" type="radio" name="basis_set" id="basis_set_def2-TZVP"
+                                       value="def2-TZVP" checked>
+                                <label class="form-check-label" for="basis_set_def2-TZVP">def2-TZVP</label>
+                            </div>
+                            <div class="form-check form-check-inline col">
+                                <input class="form-check-input" type="radio" name="basis_set" id="basis_set_6-31G*"
+                                       value="6-31G*">
+                                <label class="form-check-label" for="basis_set_6-31G*">6-31G*</label>
+                            </div>
+                        </div>
+            </fieldset>
+
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group col-sm-6 col-lg-6">
+                        <label style="color:black; font-weight:bold;" for="title">AlphaFold prediction version:</label>
+                        <input type="number" min=1 max=4 step=1 name="prediction_version" class="form-control" value="4">
+                    </div>
+
+
+
+
+                </div>
+            </div>
+
+
+
+
+
+
+            <br>
 
 
             <div class="form-group row">

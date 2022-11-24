@@ -2,19 +2,21 @@ from flask import render_template, flash, request, send_from_directory, redirect
 from time import time
 import requests
 from src.molecule import Molecule
-from src.SQEqp_h import SQEqp_h
 import os
 import shutil
 from multiprocessing import Pool
-from src.SQEqp_h import calculate_charges
+from src.SQEqp import calculate_charges
 import numpy as np
 import zipfile
 from datetime import datetime
-
-
 from numba import jit
+from numba.core import types
+from numba.typed import Dict
+import json
+
+
 @jit(nopython=True, cache=True) # paralelizovat to? Zkusit na velké struktuře
-def precalculate_parameters(atomic_types, bonds_types, surfaces, parameters, bond_hardnesses):
+def precalculate_parameters_SQEqps(atomic_types, bonds_types, surfaces, parameters, bond_hardnesses):
     n_atoms = len(atomic_types)
     n_bonds = len(bonds_types)
 
@@ -40,6 +42,30 @@ def precalculate_parameters(atomic_types, bonds_types, surfaces, parameters, bon
 
 
 
+@jit(nopython=True, cache=True) # paralelizovat to? Zkusit na velké struktuře
+def precalculate_parameters_SQEqp(atomic_types, bonds_types, parameters, bond_hardnesses):
+    n_atoms = len(atomic_types)
+    n_bonds = len(bonds_types)
+    precalc_params = np.empty((n_atoms, 4), dtype=np.float64)
+    precalc_bond_hardnesses = np.empty(n_bonds, dtype=np.float64)
+    for i in range(n_atoms): # pokud nebudeme paralelizovat, tak nazipovat!
+        symbol_i = atomic_types[i]
+        electronegativity, hardness, width, q0, = parameters[symbol_i]
+        precalc_params[i] = np.array((-electronegativity,
+                             hardness,
+                             2 * width ** 2,
+                             q0), dtype=np.float64)
+    for i in range(n_bonds): # upravit podle toho, zda budeme paralelizovat
+        precalc_bond_hardnesses[i] = bond_hardnesses[bonds_types[i]]
+    return precalc_params, precalc_bond_hardnesses
+
+
+
+
+
+
+
+
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -57,9 +83,36 @@ application = Flask(__name__)
 application.jinja_env.trim_blocks = True
 application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = "asdfasdf"
-empirical_method = SQEqp_h(f"{root_dir}/parameters/parameters.json")
 
-n_cpu = 2
+
+
+def load_parameters():
+    params_SQEqps = json.load(open(f"{root_dir}/parameters/parameters_SQEqps.json"))
+    parameters_SQEqps = Dict.empty(key_type=types.unicode_type,
+                                   value_type=types.float32[:])
+    for key, value in params_SQEqps["atom"]["data"].items():
+        parameters_SQEqps[key] = np.array(value, dtype=np.float32)
+    bond_hardnesses_SQEqps = Dict.empty(key_type=types.unicode_type,
+                                        value_type=types.float64)
+    for key, value in params_SQEqps["bond"]["data"].items():
+        bond_hardnesses_SQEqps[key] = value
+
+    params_SQEqp = json.load(open(f"{root_dir}/parameters/parameters_SQEqp.json"))
+    parameters_SQEqp = Dict.empty(key_type=types.unicode_type,
+                                   value_type=types.float32[:])
+    for key, value in params_SQEqp["atom"]["data"].items():
+        parameters_SQEqp[key] = np.array(value, dtype=np.float32)
+    bond_hardnesses_SQEqp = Dict.empty(key_type=types.unicode_type,
+                                        value_type=types.float64)
+    for key, value in params_SQEqp["bond"]["data"].items():
+        bond_hardnesses_SQEqp[key] = value
+
+    return parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps
+
+parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps = load_parameters()
+
+
+n_cpu = 1
 # calculation time do flash?
 
 # upgradovat věci od tomáše
@@ -86,6 +139,7 @@ def page_log(data_dir,
              step,
              log,
              delete_last_line=False):
+    # předělat? kontrolovat pokud jsou na konci posledního řádku ..., tak smazat poslední řádek
     log = f"<p><span style='font-weight:bold'> Step {step}/6:</span> {log}</p>\n"
     logs = open(f"{data_dir}/page_log.txt").readlines()
     if delete_last_line:
@@ -107,6 +161,9 @@ def main_site():
                                    code=code)
         elif action == "calculate charges":
             ph = request.form['ph']
+            basis_set = request.form['basis_set']
+            structure_optimization = request.form['structure_optimization']
+            prediction_version = request.form['prediction_version']
 
 
             try:
@@ -121,8 +178,6 @@ def main_site():
                                         code=code)
 
 
-
-
             ID = f"{code}_{ph}"
             data_dir = f"{root_dir}/calculated_structures/{ID}"
 
@@ -135,11 +190,11 @@ def main_site():
             os.mknod(f"{data_dir}/page_log.txt")
 
             s = time()
-            response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v3.pdb")
+            response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{prediction_version}.pdb")
             if response.status_code != 200:
                 # shutil.rmtree(data_dir)
                 os.system(f"rm -r {data_dir}")
-                flash(f'No structure with code "{code}" found in the AlphaFold database.')
+                flash(f'No structure with UniProt code "{code}" in prediction version "{prediction_version}" found in the AlphaFold database.')
                 return render_template('index.html')
             with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
                 pdb_file.write(response.text)
@@ -165,55 +220,72 @@ def calculation():
     with open(f"{root_dir}/logs.txt", "a") as log_file:
         log_file.write(f"{request.remote_addr} {code} {ph} {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
 
-
-    page_log(data_dir,2, "Protonation of structure...")
+    step_counter = 2
+    page_log(data_dir,step_counter, "Protonation of structure...")
     s = time()
     pdb_file = f"{data_dir}/{code}.pdb"
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
-    os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --with-ph {ph} "
+    os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --titration-state-method propka --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {data_dir}/propka.log 2>&1 ")
     # add root for obabel!!!!
     os.system(f"obabel -ipdb {pdb_file_with_hydrogens} -ommcif -O {data_dir}/{code}_added_H.cif")
-    page_log(data_dir,2, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
+    page_log(data_dir,step_counter, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
+    step_counter += 1
 
 
-
-    page_log(data_dir,3, "Loading of molecule...")
+    page_log(data_dir,step_counter, "Loading of molecule...")
     s = time()
     try:
         molecule = Molecule(code, pdb_file_with_hydrogens)
     except ValueError as e:
-        # výsledky smazat po downloadování
         return redirect(url_for('wrong_structure',
                                 ID=ID,
                                 code=ID.split("_")[0],
                                 message=str(e)))
+    page_log(data_dir,step_counter, f"Molecule loaded. ({round(time() - s, 2)}s)", delete_last_line=True)
+    step_counter += 1
+
+
+    empirical_method = "SQEqp"
+    if empirical_method == "SQEqp":
+        page_log(data_dir,step_counter, "Precalculate parameters...")
+        molecule.precalc_params, molecule.precalc_bond_hardnesses = precalculate_parameters_SQEqp(molecule.ats_srepr,
+                                                                                            molecule.bonds_srepr,
+                                                                                            parameters_SQEqp,
+                                                                                            bond_hardnesses_SQEqp)
+        page_log(data_dir, step_counter, f"Parameters precalculated. ({round(time() - s, 2)}s)",
+                 delete_last_line=True)
+        step_counter += 1
+
+
+    elif empirical_method == "SQEqps":
+        page_log(data_dir,step_counter, "Calculation of solvatable surface...")
+        s = time()
+        molecule.calculate_surfaces(cpu=n_cpu)
+        page_log(data_dir, step_counter, f"Solvatable surface calculated. ({round(time() - s, 2)}s)",
+                 delete_last_line=True)
+        step_counter += 1
+
+        page_log(data_dir,step_counter, "Precalculate parameters...")
+        molecule.precalc_params, molecule.precalc_bond_hardnesses = precalculate_parameters_SQEqps(molecule.ats_srepr,
+                                                                                            molecule.bonds_srepr,
+                                                                                            molecule.surfaces,
+                                                                                            parameters_SQEqps,
+                                                                                            bond_hardnesses_SQEqps)
+        page_log(data_dir, step_counter, f"Parameters precalculated. ({round(time() - s, 2)}s)",
+                 delete_last_line=True)
+        step_counter += 1
 
 
 
-
-    page_log(data_dir,3, f"Molecule loaded. ({round(time() - s, 2)}s)", delete_last_line=True)
-
-
-    page_log(data_dir,4, "Calculation of solvatable surface...")
+    page_log(data_dir,step_counter, "Creation of submolecules...")
     s = time()
-    molecule.calculate_surfaces(cpu=n_cpu)
-    print(f"Surface calculated. ({time() - s})")
-    page_log(data_dir,4, f"Solvatable surface calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
-
-
-    page_log(data_dir,5, "Creation of submolecules...")
-    s = time()
-    molecule.precalc_params, molecule.precalc_bond_hardnesses = precalculate_parameters(molecule.ats_srepr,
-                                                                                        molecule.bonds_srepr,
-                                                                                        molecule.surfaces,
-                                                                                        empirical_method.parameters,
-                                                                                        empirical_method.bond_hardnesses)
     molecule.create_submolecules()
-    page_log(data_dir,5, f"Submolecules created. ({round(time() - s, 2)}s)", delete_last_line=True)
+    page_log(data_dir,step_counter, f"Submolecules created. ({round(time() - s, 2)}s)", delete_last_line=True)
+    step_counter += 1
 
 
-    page_log(data_dir,6, "Calculation of partial atomic charges...")
+    page_log(data_dir,step_counter, "Calculation of partial atomic charges...")
     s = time()
     with Pool(n_cpu) as p:
         all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
@@ -234,7 +306,7 @@ def calculation():
     with open(f"{pdb_file[:-4]}_added_H.pqr", "w") as pqr_file:
         pqr_file.write("".join(new_lines))
 
-    page_log(data_dir,6, f"Partial atomic charges calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
+    page_log(data_dir,step_counter, f"Partial atomic charges calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
     return redirect(url_for('results',
                             ID=ID))
 
@@ -270,7 +342,7 @@ def results():
     except FileNotFoundError:
         # shutil.rmtree(data_dir)
         os.system(f"rm {data_dir}")
-        flash(f'Alphafold or propka error with structure "{code}"!')
+        flash(f'Alphafold or pdb2pqr30 error with structure "{code}"!')
         return redirect(url_for('main_site'))
 
     chg_range = round(max(absolute_charges), 4)

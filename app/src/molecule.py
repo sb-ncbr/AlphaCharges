@@ -14,7 +14,7 @@ class Substructure:
 
         self.residues = residues
         self.calculated_atoms = len(residues[0].coordinates)
-        self.surfaces = np.concatenate([res.surfaces for res in residues])
+        #self.surfaces = np.concatenate([res.surfaces for res in residues])
         self.coordinates = np.concatenate([res.coordinates for res in residues], axis=0)
         self.precalc_params = np.concatenate([res.precalc_params for res in residues], axis=0)
         self.total_chg = sum([chg for res in residues for chg in res.propka_charges])
@@ -50,7 +50,7 @@ class Residue:
                  name: str,
                  number: int,
                  coordinates: np.array,
-                 surfaces: np.array,
+                 #surfaces: np.array,
                  propka_charges: np.array,
                  indices: np.array,
                  precalc_params: np.array):
@@ -59,7 +59,7 @@ class Residue:
         self.number = number
         self.coordinates = coordinates
         self.coordinates_mean = np.mean(self.coordinates, axis=0)
-        self.surfaces = surfaces
+        #self.surfaces = surfaces
         self.propka_charges = propka_charges
         self.indices = indices
         self.precalc_params = precalc_params
@@ -112,10 +112,7 @@ class Molecule:
             coordinates.append((pos.x, pos.y, pos.z))
         self.coordinates = np.array(coordinates, dtype=np.float32)
 
-
-
         ats_sreprba = self.create_ba()
-        ats_sreprba2 = self.create_ba2()
         bonds_srepr = [f"{'-'.join(sorted([ats_sreprba[ba1], ats_sreprba[ba2]]))}-{bond_type}"
                        for ba1, ba2, bond_type in bonds]
 
@@ -135,107 +132,10 @@ class Molecule:
                           'N/CCC', 'N/CCH',
                           'N/CCHH', 'N/CHH', 'N/CHHH', 'O/C', 'O/CH', 'S/CC', 'S/CH', 'S/CS'}
 
-        # baex
-        ats_srepr = []
-        for i, (atba, atba2) in enumerate(zip(ats_sreprba, ats_sreprba2)):
+        for i, atba in enumerate(ats_sreprba):
             if atba not in real_ats_types:
                 raise ValueError(f"{i+1} {atba}")
-
-            if atba in ['H/N', "H/C", "O/C", "N/CHH", "N/CHHH", "C/CHHS", "C/CCC"]:
-                ats_srepr.append(atba2)
-            elif atba == "O/CH":
-                if atba2 == "O/CH/CC":
-                    ats_srepr.append("O/CH1")
-                elif atba2 in ["O/CH/CHH", "O/CH/CCH"]:
-                    ats_srepr.append("O/CH2")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "N/CCH":
-                if len(atba2.split("/")[2]) == 4:
-                    ats_srepr.append("N/CCH1")
-                elif len(atba2.split("/")[2]) == 5:
-                    ats_srepr.append("N/CCH2")
-                elif len(atba2.split("/")[2]) == 3:
-                    ats_srepr.append("N/CCH3")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CHN":
-                if atba2 == "C/CHN/CCCH":
-                    ats_srepr.append("C/CHN1")
-                elif atba2 in ["C/CHN/CCN", "C/CHN/CCHN"]:
-                    ats_srepr.append("C/CHN2")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CHHN":
-                if atba2 == "C/CHHN/CHOO":
-                    ats_srepr.append("C/CHHN1")
-                elif atba2 in ["C/CHHN/CHNO", "C/CHHN/HHHNO"]:
-                    ats_srepr.append("C/CHHN2")
-                elif atba2 in ["C/CHHN/CCHHHH", "C/CHHN/CCCHH"]:
-                    ats_srepr.append("C/CHHN3")
-                elif atba2 in ["C/CHHN/CHHHHH", "C/CHHN/CCHHH"]:
-                    ats_srepr.append("C/CHHN4")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CHHH":
-                if atba2 == "C/CHHH/CHO":
-                    ats_srepr.append("C/CHHH1")
-                elif atba2 in ["C/CHHH/CHN", "C/CHHH/CHH", "C/CHHH/CCH"]:
-                    ats_srepr.append("C/CHHH2")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CCN":
-                if atba2 == "C/CCN/CCCCHH":
-                    ats_srepr.append("C/CCN1")
-                elif atba2 in ["C/CCN/CCHHHHN", "C/CCN/CCHHHN"]:
-                    ats_srepr.append("C/CCN2")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CCHN":
-                if atba2.split("/")[2].count("O") == 1:
-                    ats_srepr.append("C/CCHN1")
-                elif atba2.split("/")[2].count("O") == 2:
-                    ats_srepr.append("C/CCHN2")
-                elif atba2.split("/")[2].count("O") == 3:
-                    ats_srepr.append("C/CCHN3")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CCHH":
-                if atba2.split("/")[2].count("O") == 2:
-                    ats_srepr.append("C/CCHH1")
-                elif atba2.split("/")[2].count("O") == 1:
-                    ats_srepr.append("C/CCHH2")
-                elif atba2.split("/")[2].count("N") == 2:
-                    ats_srepr.append("C/CCHH3")
-                elif atba2 in ["C/CCHH/CHHHNS", "C/CCHH/CHHHHN", "C/CCHH/CCHHHN", "C/CCHH/CCHHHH", "C/CCHH/CCCHN",
-                               "C/CCHH/CCCHHN"]:
-                    ats_srepr.append("C/CCHH4")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            elif atba == "C/CCH":
-                if atba2.split("/")[2].count("O") == 1:
-                    ats_srepr.append("C/CCH1")
-                elif atba2.split("/")[2].count("N") == 1:
-                    ats_srepr.append("C/CCH2")
-                elif atba2 == "C/CCH/CCCH":
-                    ats_srepr.append("C/CCH3")
-                elif atba2 == "C/CCH/CCHH":
-                    bonded_atoms = []
-                    for at1, at2, _ in bonds:
-                        if at1 == i:
-                            bonded_atoms.append(at2)
-                        if at2 == i:
-                            bonded_atoms.append(at1)
-                    bonded_atoms = set(bonded_atoms)
-                    if bonded_atoms == {"C/CCH/CCCH", "H/C/CC", "C/CCH/CCCHH"}:
-                        ats_srepr.append("C/CCH4")
-                    else:
-                        ats_srepr.append("C/CCH3")
-                else:
-                    raise ValueError(f"{i+1} {atba}")
-            else:
-                ats_srepr.append(atba)
-        self.ats_srepr = List(ats_srepr)
+        self.ats_srepr = List(ats_sreprba)
         self.bonds_srepr = List(bonds_srepr)
 
 
@@ -247,30 +147,14 @@ class Molecule:
         return [f"{symbol}/{''.join(sorted(bonded_ats))}"
                 for symbol, bonded_ats in zip(self.symbols, bonded_ats)]
 
-    def create_ba2(self) -> list:
-        bonded_ats = [[] for _ in range(self.n_ats)]
-        for bonded_at1, bonded_at2, _ in self.bonds:
-            bonded_ats[bonded_at1].append(self.symbols[bonded_at2])
-            bonded_ats[bonded_at2].append(self.symbols[bonded_at1])
-
-        bonded_bonded_ats = [[] for _ in range(self.n_ats)]
-        for bonded_at1, bonded_at2, _ in self.bonds:
-            bonded_bonded_ats[bonded_at1].extend(bonded_ats[bonded_at2])
-            bonded_bonded_ats[bonded_at1].remove(self.symbols[bonded_at1])
-            bonded_bonded_ats[bonded_at2].extend(bonded_ats[bonded_at1])
-            bonded_bonded_ats[bonded_at2].remove(self.symbols[bonded_at2])
-
-        return [f"{symbol}/{''.join(sorted(bonded_ats))}/{''.join(sorted(bonded_bonded_ats))}"
-                for symbol, bonded_ats, bonded_bonded_ats in zip(self.symbols, bonded_ats, bonded_bonded_ats)]
-
-
+    """
     def calculate_surfaces(self, cpu) -> np.array:
         num_pts = 1000
         kdtree = kdtreen(self.coordinates, leaf_size=40)
         with Pool(cpu) as p:
             surfaces = p.starmap(f2, [[index, at, self.coordinates, self.symbols, kdtree, num_pts] for index, at in enumerate(self.symbols)])
         self.surfaces = np.array(surfaces)
-
+    """
 
     def create_submolecules(self):
         self.residues = []
@@ -283,7 +167,7 @@ class Molecule:
                 self.residues.append(Residue(residues_names[start_index],
                                              number-1,
                                              self.coordinates[start_index: i],
-                                             self.surfaces[start_index: i],
+                                             #self.surfaces[start_index: i],
                                              self.propka_charges[start_index: i],
                                              [x for x in range(start_index, i)],
                                              self.precalc_params[start_index: i]))
@@ -294,7 +178,7 @@ class Molecule:
         self.residues.append(Residue(residues_names[start_index],
                                      number-1,
                                      self.coordinates[start_index: ],
-                                     self.surfaces[start_index: ],
+                                     #self.surfaces[start_index: ],
                                      self.propka_charges[start_index: ],
                                      [x for x in range(start_index, self.n_ats)],
                                      self.precalc_params[start_index: ]))
@@ -372,7 +256,7 @@ class Molecule:
                              'TYR': 4.514843482397014,
                              'VAL': 2.951599144669813}
 
-                if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 5:
+                if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 3:
                     residues.append(self.residues[i])
             self.substructures.append(Substructure(residues))
 

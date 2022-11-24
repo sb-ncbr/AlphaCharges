@@ -7,22 +7,25 @@
             <div class="row">
                 <div class="col">
                     <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges</h1>
-                    Tool for simple, fast and accurate calculation of QM-like partial atomic charges for Alphafold database structures.
+                    A service for fast calculating QM-like partial atomic charges for
+                    proteins from AlphaFold Protein Structure Database. A short <a href="/static/manual.pdf" target="_blank">manual</a> describes how to use the service and how partial atomic charges are calculated.
                 </div>
             </div>
+<hr>
             {% include 'base/flash.html' %}
-            <hr>
-            <span style="font-weight:bold">Examples:</span>
-            <br>
+
+            <!--<hr>-->
+            <!--<span style="font-weight:bold">Examples:</span>-->
+            <!--<br>-->
             <!--L8BU87 -     518 atoms, 2.5 seconds
             <br>
             F1C650 -     2171 atoms, 3.7 seconds
             <br>-->
-            <a href="https://alphafold.ebi.ac.uk/entry/Q08JQ9">HdaR</a>, Escherichia coli, Q08JQ9
+            <!--<a href="https://alphafold.ebi.ac.uk/entry/Q08JQ9">HdaR</a>, Escherichia coli, Q08JQ9
             <br>
             <a href="https://alphafold.ebi.ac.uk/entry/A0A078BC61">TnpA</a>, Escherichia coli, A0A078BC61
             <br>
-            <a href="https://alphafold.ebi.ac.uk/entry/A0A6M3GU96">Cytochromes P450</a>, Holotrichia parallela, A0A6M3GU96
+            <a href="https://alphafold.ebi.ac.uk/entry/A0A6M3GU96">Cytochromes P450</a>, Holotrichia parallela, A0A6M3GU96-->
             <!--<br>
             Q5VSL9 -     13435 atoms, 15 seconds
             <hr>
@@ -30,9 +33,13 @@
             <hr>
             G9JPY0 - wrong alphafold
             <hr>-->
-            <hr>
 
+            <br>
             <input type="hidden" name="ph" value='7.2' />
+            <input type="hidden" name="basis_set" value='def2-TZVP' />
+            <input type="hidden" name="structure_optimization" value='false' />
+            <input type="hidden" name="prediction_version" value='4' />
+
             <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
                 <label style="color:black" for="title">UniProt code:</label>
                 <input type="text" name="code" required="required"
@@ -47,7 +54,28 @@
 
         </form>
 
+        <br>
+
         <hr>
+
+
+        <div class="row">
+                <div class="col">
+                    <small>
+                        If you found <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> helpful, please cite: 	<br><br>
+                        <p style="margin-left: 40px"><span class="font-weight-bold">Protonation</span> -
+                            <i>Jurrus, E., Engel, D., Star, K., Monson, K., Brandi, J., Felberg, L.E., Brookes, D.H., Wilson, L., Chen, J., Liles, K. and Chun, M., 2018. <br><a href="https://doi.org/10.1002/pro.3280">Improvements to the APBS biomolecular solvation software suite.</a> Protein Science, 27(1), pp.112-128.</i></p>
+
+                        <p style="margin-left: 40px"><span class="font-weight-bold">Structure optimization</span> -
+                            <i>Bannwarth, C., Caldeweyher, E., Ehlert, S., Hansen, A., Pracht, P., Seibert, J., Spicher, S. and Grimme, S., 2021. <br><a href="https://wires.onlinelibrary.wiley.com/doi/full/10.1002/wcms.1493">Extended tight‐binding quantum chemistry methods.</a> Wiley Interdisciplinary Reviews: Computational Molecular Science, 11(2), p.e1493.</i></p>
+
+                        Are you interested in a research collaboration? Feel free to <a
+                            href="mailto:radka.svobodova@ceitec.muni.cz">contact us</a>.
+                    </small>
+                </div>
+            </div>
+        <hr>
+
         {% include 'base/elixir.html' %}
         <hr>
         {% include 'base/footer.html' %}
