@@ -56,6 +56,8 @@ def precalculate_parameters_SQEqp(atomic_types, bonds_types, parameters, bond_ha
                              2 * width ** 2,
                              q0), dtype=np.float64)
     for i in range(n_bonds): # upravit podle toho, zda budeme paralelizovat
+        if bonds_types[i] not in bond_hardnesses:
+            print(bonds_types[i])
         precalc_bond_hardnesses[i] = bond_hardnesses[bonds_types[i]]
     return precalc_params, precalc_bond_hardnesses
 
@@ -87,6 +89,7 @@ application.config['SECRET_KEY'] = "asdfasdf"
 
 
 def load_parameters():
+    
     params_SQEqps = json.load(open(f"{root_dir}/parameters/parameters_SQEqps.json"))
     parameters_SQEqps = Dict.empty(key_type=types.unicode_type,
                                    value_type=types.float32[:])
@@ -104,6 +107,7 @@ def load_parameters():
         parameters_SQEqp[key] = np.array(value, dtype=np.float32)
     bond_hardnesses_SQEqp = Dict.empty(key_type=types.unicode_type,
                                         value_type=types.float64)
+
     for key, value in params_SQEqp["bond"]["data"].items():
         bond_hardnesses_SQEqp[key] = value
 
@@ -113,27 +117,28 @@ parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEq
 
 
 n_cpu = 1
-# calculation time do flash?
 
 # upgradovat věci od tomáše
 
 # kontrola přímo v javascriptu
 
-# zkontrolovat rychlost
-
-# kontrola atomových typů
-
 # dodělat organizmus a název proteinu
 
 # upravit cachování ať nežere tolik paměti
 
- # updatovat python
+# updatovat python
 
- # change molecule.code na molecule.name
+# change molecule.code na molecule.name
  
- # zkontrolovat, zda funguje rdkit exception!!
+# zkontrolovat, zda funguje rdkit exception!!
 
- # dát v results data o molekule a viev vedle sebe
+# dát v results data o molekule a viev vedle sebe
+
+# surface
+
+# do hlavičky věcy od Tomáše v emailu
+
+# přidat do init skriptu přidání modulů pro apache pro HTTPS
 
 def page_log(data_dir,
              step,
@@ -161,11 +166,7 @@ def main_site():
                                    code=code)
         elif action == "calculate charges":
             ph = request.form['ph']
-            basis_set = request.form['basis_set']
-            structure_optimization = request.form['structure_optimization']
             prediction_version = request.form['prediction_version']
-
-
             try:
                 ph = float(ph)
             except ValueError:

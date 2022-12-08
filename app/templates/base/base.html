@@ -5,12 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
           content="AlphaCharges is an application for fast calculation of partial atomic charges of structures from the Alphafold database.">
-    <title>{% block title %} αCharges {% endblock title %}</title>
-
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SMSMJ7SQ7Z"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
+      gtag('config', 'G-SMSMJ7SQ7Z');
+    </script>
 {% block styles %}
 {% endblock styles %}
 </head>

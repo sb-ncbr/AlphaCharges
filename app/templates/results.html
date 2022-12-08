@@ -38,6 +38,11 @@
                 <fieldset class="row form-group mb-1">
                         <legend class="font-weight-bold col-form-label col pb-0 pt-0">View</legend>
                         <div class="col">
+                            <div class="form-check form-check-inline" title="Surface representation">
+                                <input class="form-check-input" type="radio" name="view" id="view_surface"
+                                       value="Surface" checked>
+                                <label class="form-check-label" for="view_surface">Surface</label>
+                            </div>
                             <div class="form-check form-check-inline" title="Cartoon representation">
                                 <input class="form-check-input" type="radio" name="view" id="view_cartoon"
                                        value="Cartoon">
@@ -47,11 +52,6 @@
                                 <input class="form-check-input" type="radio" name="view" id="view_bas"
                                        value="Balls and sticks">
                                 <label class="form-check-label" for="view_bas">Balls and sticks</label>
-                            </div>
-                            <div class="form-check form-check-inline" title="Surface representation">
-                                <input class="form-check-input" type="radio" name="view" id="view_surface"
-                                       value="Surface">
-                                <label class="form-check-label" for="view_surface">Surface</label>
                             </div>
                         </div>
                 </fieldset>
@@ -123,10 +123,13 @@
     <script src="{{ url_for('static', filename='litemol/static/js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 
+
     <script>
         const get_structure_url = '{{ url_for("get_structure", ID=ID) }}';
         const get_charges_url = '{{ url_for("get_charges", ID=ID) }}';
         const get_format_url = '{{ url_for("get_format", ID=ID) }}';
-        init_results("{{ ID }}", "{{ chg_range }}")
+        init_results("{{ ID }}", "{{ chg_range }}");
+
     </script>
 {% endblock scripts %}
+
