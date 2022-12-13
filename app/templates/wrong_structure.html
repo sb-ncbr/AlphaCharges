@@ -6,7 +6,7 @@
         <form method=post enctype=multipart/form-data>
             <div class="row">
                 <div class="col">
-                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges - <span>Calculation settings</span></h1>
+                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges – <span>Wrong structure</span></h1>
                 </div>
             </div>
             <p>
@@ -16,7 +16,7 @@
             {% include 'base/flash.html' %}
 
     <br>    <br>
-            There is an error with atom with index {{ message }}! The structure is probably incorrectly predicted by AlphaFold, or incorrectly protonated by pdb2pqr.
+            There is an error with atom with index {{ message }}! The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.
                 <br>    <br>    <br>    <br>
         <div class="row">
                 <div class="col text-left"><a href="{{  url_for('download_wrong_structure', ID=ID)  }}" class="btn btn-primary">Download structure</a></div>

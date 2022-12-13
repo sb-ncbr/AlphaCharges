@@ -178,9 +178,15 @@ def main_site():
 
             # check whether the structure with the given setting has already been calculated
             if os.path.isdir(f"{root_dir}/calculated_structures/{ID}"):
-                return redirect(url_for('results',
-                                        ID=ID,
-                                        from_cache=True))
+                if os.path.isfile(f"{root_dir}/calculated_structures/{ID}/charges.txt"):
+                    return redirect(url_for('results',
+                                            ID=ID,
+                                            from_cache=True))
+                else:
+                    os.system(f"rm -r {root_dir}/calculated_structures/{ID}")
+
+
+
             os.mkdir(data_dir)
             os.mknod(f"{data_dir}/page_log.txt")
 
@@ -290,9 +296,6 @@ def calculation():
     all_charges = [chg for chgs in all_charges for chg in chgs]
     all_charges -= (np.sum(all_charges) - molecule.total_chg) / len(all_charges)
     charges = all_charges
-
-    for a,b in zip(molecule.ats_srepr, charges):
-        print(a,b)
 
     with open(f"{data_dir}/charges.txt", "w") as chg_file:
         chg_file.write(f"{molecule.code}\n" + ' '.join([str(charge) for charge in charges]) + " \n")

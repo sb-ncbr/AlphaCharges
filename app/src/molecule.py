@@ -136,7 +136,7 @@ class Molecule:
 
         for i, atba in enumerate(ats_sreprba):
             if atba not in real_ats_types:
-                raise ValueError(f"{i+1} {atba}")
+                raise ValueError(f"{i+1}")
         self.ats_srepr = List(ats_sreprba)
         self.bonds_srepr = List(bonds_srepr)
 

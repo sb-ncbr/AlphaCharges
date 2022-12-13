@@ -8,7 +8,7 @@
                 <div class="col">
                     <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges</h1>
 
-                    <span class="font-weight-bold">AlphaCharges</span> (<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span>) is a web application for calculation of partial atomic charges on protein structures predicted by the <a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank">AlphaFold2 algorithm</a> and deposited in the <a href="https://academic.oup.com/nar/article/50/D1/D439/6430488" target="_blank">AlphaFoldDB</a> database. The charges are computed by the <a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w" target="_blank">SQE+qp empirical method</a>, which quality is comparable to quantum mechanical charge calculation approaches (specifically, it is parameterized using B3LYP/6-31G*/NPA quantum mechanical charges). Before computation of the charges,<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> protonates the input protein structures by <a href="https://pubs.acs.org/doi/full/10.1021/ct100578z" target="_blank">PROPKA3</a>. A way how to use aCharges is described in the <a href="/static/manual.pdf" target="_blank">manual</a>.
+                    <span class="font-weight-bold">AlphaCharges</span> (<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span>) is a web application for calculation of partial atomic charges on protein structures predicted by the <a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank">AlphaFold2 algorithm</a> and deposited in the <a href="https://academic.oup.com/nar/article/50/D1/D439/6430488" target="_blank">AlphaFoldDB</a> database. The charges are computed by the <a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w" target="_blank">SQE+qp empirical method</a>, which quality is comparable to quantum mechanical charge calculation approaches (specifically, it is parameterized using B3LYP/6-31G*/NPA quantum mechanical charges). Before computation of the charges, <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> protonates the input protein structures by <a href="https://pubs.acs.org/doi/full/10.1021/ct100578z" target="_blank">PROPKA3</a>. A way how to use <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> is described in the <a href="/static/manual.pdf" target="_blank">manual</a>.
 
 
                 </div>
@@ -68,7 +68,7 @@
                     <p style="text-align:center;"><img src="/static/p_glycoprotein.png" alt="P-glycoprotein"
                                                        style="height: 200px"></p>
                     <p><small>
-                        P-glycoprotein is part of the ABC transporter proteins that decrease drug accumulation in cancer cells (see details <a href="https://www.sciencedirect.com/science/article/pii/S0041008X0400482X?via%3Dihub" target="_blank">here</a>). It is a 170-kDa protein which consists in a nucleotide-binding domain and a transmembrane domain (details are <a href="https://www.pnas.org/doi/full/10.1073/pnas.1309275110" target="_blank">here</a>). Partial atomic charges calculated by AlphaCharges demonstrate the differences in charge distribution between transmembrane parts and extracellular/intracellular one.
+                        P-glycoprotein is part of the ABC transporter proteins that decrease drug accumulation in cancer cells (see details <a href="https://www.sciencedirect.com/science/article/pii/S0041008X0400482X?via%3Dihub" target="_blank">here</a>). It is a 170-kDa protein which consists in a nucleotide-binding domain and a transmembrane domain (details are <a href="https://www.pnas.org/doi/full/10.1073/pnas.1309275110" target="_blank">here</a>). Partial atomic charges calculated by <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> demonstrate the differences in charge distribution between transmembrane parts and extracellular/intracellular one.
                     </small>
                     </p>
                     <div class="text-center">
@@ -78,7 +78,7 @@
                         <input type="hidden" name="code" value='P34712' />
                         <button type="submit" class="btn btn-primary" name="action" value="calculate charges">P-glycoprotein</button>
                         </form>
-                    </div>
+                    </div><br><br>
                 </div>
 
                 <div class="col-lg-4">
@@ -107,7 +107,7 @@ majorly involved in proteins digestion in the stomach. It’s secreted as a zymo
                         <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Inactive</button>
                         </form>
                         </div>
-                        </div>
+                        </div><br><br>
                     </div>
                 <div class="col-lg-4">
                     <b>PIN proteins</b><br>
@@ -182,12 +182,6 @@ majorly involved in proteins digestion in the stomach. It’s secreted as a zymo
 
 
 
-
-
-
-        <br>
-
-        <hr>
 
 
         <div class="row">
