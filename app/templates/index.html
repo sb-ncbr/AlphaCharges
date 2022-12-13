@@ -7,8 +7,10 @@
             <div class="row">
                 <div class="col">
                     <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges</h1>
-                    A service for fast calculating QM-like partial atomic charges for
-                    proteins from AlphaFold Protein Structure Database. A short <a href="/static/manual.pdf" target="_blank">manual</a> describes how to use the service and how partial atomic charges are calculated.
+
+                    <span class="font-weight-bold">AlphaCharges</span> (<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span>) is a web application for calculation of partial atomic charges on protein structures predicted by the <a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank">AlphaFold2 algorithm</a> and deposited in the <a href="https://academic.oup.com/nar/article/50/D1/D439/6430488" target="_blank">AlphaFoldDB</a> database. The charges are computed by the <a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w" target="_blank">SQE+qp empirical method</a>, which quality is comparable to quantum mechanical charge calculation approaches (specifically, it is parameterized using B3LYP/6-31G*/NPA quantum mechanical charges). Before computation of the charges,<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> protonates the input protein structures by <a href="https://pubs.acs.org/doi/full/10.1021/ct100578z" target="_blank">PROPKA3</a>. A way how to use aCharges is described in the <a href="/static/manual.pdf" target="_blank">manual</a>.
+
+
                 </div>
             </div>
 <hr>
@@ -41,7 +43,7 @@
             <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
                 <label style="color:black" for="title">UniProt code:</label>
                 <input type="text" name="code" required="required"
-                       class="form-control">
+                       class="form-control" placeholder="e.g., P34712, L8BU87">
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Calculate charges</button>
@@ -52,6 +54,137 @@
 
         </form>
 
+
+        <hr>
+
+                    <div class="row">
+                <div class="col">
+                    <h3>Examples</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4">
+                    <b>P-glycoprotein</b><br>
+                    <p style="text-align:center;"><img src="/static/p_glycoprotein.png" alt="P-glycoprotein"
+                                                       style="height: 200px"></p>
+                    <p><small>
+                        P-glycoprotein is part of the ABC transporter proteins that decrease drug accumulation in cancer cells (see details <a href="https://www.sciencedirect.com/science/article/pii/S0041008X0400482X?via%3Dihub" target="_blank">here</a>). It is a 170-kDa protein which consists in a nucleotide-binding domain and a transmembrane domain (details are <a href="https://www.pnas.org/doi/full/10.1073/pnas.1309275110" target="_blank">here</a>). Partial atomic charges calculated by AlphaCharges demonstrate the differences in charge distribution between transmembrane parts and extracellular/intracellular one.
+                    </small>
+                    </p>
+                    <div class="text-center">
+                       <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='P34712' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">P-glycoprotein</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <b>Pepsin</b><br>
+                    <p style="text-align:center;"><img src="/static/pepsin.png" alt="Pepsin" style="height: 200px"></p>
+                    <p><small>
+                        Pepsin is the enzyme that is
+majorly involved in proteins digestion in the stomach. It’s secreted as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin it is most effective at a pH of approximately 1.5 to 2 and it became inactive, when the pH rises above 6 (see more details <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">here</a>). Pepsin remains structurally stable until at least a pH of 8. Differences in a charge distribution between its active form (pH 2) and inactive form (pH 7) can be seen in this use case.
+                    </small></p>
+                        <div class="row">
+                            <div style="margin-left: 95px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='B7ZW16' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Activated</button>
+                        </form>
+                            </div>
+                            <div style="margin-left: 20px;">
+
+
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='B7ZW16' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Inactive</button>
+                        </form>
+                        </div>
+                        </div>
+                    </div>
+                <div class="col-lg-4">
+                    <b>PIN proteins</b><br>
+                    <p style="text-align:center;"><img src="/static/pin.png"
+                                                       alt="pin" style="height: 200px"></p>
+                    <p><small>
+                        The PIN family proteins control plant growth by regulating auxin export from the cytosol to the extracellular space. Eight types of PIN proteins are known (PIN1-PIN8) and this year, structures of three of them were discovered and published in Nature (i.e., articles about <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">PIN1</a>, <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">PIN3</a>, <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">PIN8</a>). Partial atomic charges play an important role in PINs functionality. The PIN protein part inside the cytosol (containing the cytosolic loop) is charged more than the part outside the cytosol. Questionable is a charge distribution of PIN5, which structure differs from other PINs (see this <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">article</a>) and was not experimentally determined yet. In the use case, you can compare charge distribution of AlphaFold2 predicted PINs from A. thaliana.
+                    </small>
+                    </p>
+                    <div class="row">
+                            <div style="margin-left: 95px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='Q9C6B8' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">PIN1</button>
+                        </form>
+                        </div>
+
+
+                        <div style="margin-left: 5px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='Q9S7Z8' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">PIN3</button>
+                        </form>
+                        </div>
+
+                        <div style="margin-left: 5px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='Q9FFD0' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">PIN5</button>
+                        </form>
+                        </div></div>
+                    <div class="row" style="padding-top: 5px" >
+
+                            <div style="margin-left: 95px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='Q9SQH6' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">PIN6</button>
+                        </form>
+                        </div>
+
+                        <div style="margin-left: 5px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='Q940Y5' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">PIN7</button>
+                        </form>
+                        </div>
+
+                        <div style="margin-left: 5px;">
+                        <form method=post enctype=multipart/form-data>
+                        <input type="hidden" name="ph" value='7.2' />
+                        <input type="hidden" name="prediction_version" value='4' />
+                        <input type="hidden" name="code" value='Q9LFP6' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">PIN8</button>
+                        </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+
+
+
+
+
+
+
+
         <br>
 
         <hr>
@@ -60,15 +193,7 @@
         <div class="row">
                 <div class="col">
                     <small>
-                        If you found <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> helpful, please cite: 	<br><br>
-                        <p style="margin-left: 40px"><span class="font-weight-bold">Protonation</span> -
-                            <i>Jurrus, E., Engel, D., Star, K., Monson, K., Brandi, J., Felberg, L.E., Brookes, D.H., Wilson, L., Chen, J., Liles, K. and Chun, M., 2018. <br><a href="https://doi.org/10.1002/pro.3280">Improvements to the APBS biomolecular solvation software suite.</a> Protein Science, 27(1), pp.112-128.</i></p>
-
-                        <p style="margin-left: 40px"><span class="font-weight-bold">Calculation method</span> -
-                            <i>Schindler, O., Raček, T., Maršavelski, A., Koča, J., Berka, K. and Svobodová, R., 2021. <br><a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w">Optimized SQE atomic charges for peptides accessible via a web application.</a> Journal of cheminformatics, 13(1), pp.1-11.</i></p>
-
-
-                        Are you interested in a research collaboration? Feel free to <a href="mailto:radka.svobodova@ceitec.muni.cz">contact us</a>.
+                        If you found <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> helpful, please refer this web page, the manuscript is in preparation. Are you interested in a research collaboration? Feel free to <a href="mailto:radka.svobodova@ceitec.muni.cz">contact us</a>.
                     </small>
                 </div>
             </div>

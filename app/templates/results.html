@@ -13,7 +13,7 @@
     <div class="container mt-3 p-3">
         <div class="row">
             <div class="col">
-                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges - <span>Calculation results</span></h1>
+                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges – <span>Calculation results</span></h1>
             </div>
         </div>
 
@@ -24,6 +24,10 @@
         <p>
             <span style="font-weight:bold"> Number of atoms:</span> {{ n_ats }}
         </p>
+        <p>
+            <span style="font-weight:bold"> AlphaFold2 prediction version:</span> {{ alphafold_prediction_version }}
+        </p>
+
         <p>
             <span style="font-weight:bold"> pH:</span> {{ ph }}
         </p>
@@ -38,15 +42,15 @@
                 <fieldset class="row form-group mb-1">
                         <legend class="font-weight-bold col-form-label col pb-0 pt-0">View</legend>
                         <div class="col">
-                            <div class="form-check form-check-inline" title="Surface representation">
-                                <input class="form-check-input" type="radio" name="view" id="view_surface"
-                                       value="Surface" checked>
-                                <label class="form-check-label" for="view_surface">Surface</label>
-                            </div>
                             <div class="form-check form-check-inline" title="Cartoon representation">
                                 <input class="form-check-input" type="radio" name="view" id="view_cartoon"
-                                       value="Cartoon">
+                                       value="Cartoon" checked>
                                 <label class="form-check-label" for="view_cartoon">Cartoon</label>
+                            </div>
+                            <div class="form-check form-check-inline" title="Surface representation">
+                                <input class="form-check-input" type="radio" name="view" id="view_surface"
+                                       value="Surface">
+                                <label class="form-check-label" for="view_surface">Surface</label>
                             </div>
                             <div class="form-check form-check-inline" title="Balls and sticks representation">
                                 <input class="form-check-input" type="radio" name="view" id="view_bas"
@@ -101,8 +105,7 @@
 
         <div class="row">
             <div class="col-7">
-                <a href="{{ url_for('download_charges', ID=ID) }}" class="btn btn-success" id="download">Download
-                    charges</a>
+                <a href="{{ url_for('download_charges', ID=ID) }}" class="btn btn-success" id="download">Download charges and protonated structure</a>
             </div>
             <div class="col text-right">
                 <a href="/" class="btn btn-primary">Back to main page</a>

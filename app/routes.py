@@ -89,7 +89,7 @@ application.config['SECRET_KEY'] = "asdfasdf"
 
 
 def load_parameters():
-    
+
     params_SQEqps = json.load(open(f"{root_dir}/parameters/parameters_SQEqps.json"))
     parameters_SQEqps = Dict.empty(key_type=types.unicode_type,
                                    value_type=types.float32[:])
@@ -126,19 +126,13 @@ n_cpu = 1
 
 # upravit cachování ať nežere tolik paměti
 
-# updatovat python
-
-# change molecule.code na molecule.name
- 
 # zkontrolovat, zda funguje rdkit exception!!
 
 # dát v results data o molekule a viev vedle sebe
 
-# surface
-
-# do hlavičky věcy od Tomáše v emailu
-
 # přidat do init skriptu přidání modulů pro apache pro HTTPS
+
+# title
 
 def page_log(data_dir,
              step,
@@ -166,7 +160,7 @@ def main_site():
                                    code=code)
         elif action == "calculate charges":
             ph = request.form['ph']
-            prediction_version = request.form['prediction_version']
+            alphafold_prediction_version = request.form['prediction_version']
             try:
                 ph = float(ph)
             except ValueError:
@@ -174,12 +168,12 @@ def main_site():
                 return render_template('settings.html',
                                         code=code)
             if not 0 <= ph <= 14:
-                flash('pH value must be between 1-14!')
+                flash('pH value must be between 0-14!')
                 return render_template('settings.html',
                                         code=code)
 
 
-            ID = f"{code}_{ph}"
+            ID = f"{code}_{ph}_{alphafold_prediction_version}"
             data_dir = f"{root_dir}/calculated_structures/{ID}"
 
             # check whether the structure with the given setting has already been calculated
@@ -191,11 +185,11 @@ def main_site():
             os.mknod(f"{data_dir}/page_log.txt")
 
             s = time()
-            response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{prediction_version}.pdb")
+            response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb")
             if response.status_code != 200:
                 # shutil.rmtree(data_dir)
                 os.system(f"rm -r {data_dir}")
-                flash(f'No structure with UniProt code "{code}" in prediction version "{prediction_version}" found in the AlphaFold database.')
+                flash(f'No structure with UniProt code "{code}" in prediction version "{alphafold_prediction_version}" found in the AlphaFoldDB database.')
                 return render_template('index.html')
             with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
                 pdb_file.write(response.text)
@@ -204,6 +198,7 @@ def main_site():
             # start calculation
             return render_template('computation_progress.html',
                                    ID=ID,
+                                   alphafold_prediction_version=alphafold_prediction_version,
                                    code=code,
                                    ph=ph)
 
@@ -216,7 +211,7 @@ def main_site():
 def calculation():
     # download and save PDB file (and cif todo)
     ID = request.args.get("ID")
-    code, ph = ID.split("_")
+    code, ph, _ = ID.split("_")
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     with open(f"{root_dir}/logs.txt", "a") as log_file:
         log_file.write(f"{request.remote_addr} {code} {ph} {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
@@ -288,11 +283,17 @@ def calculation():
 
     page_log(data_dir,step_counter, "Calculation of partial atomic charges...")
     s = time()
+
+
     with Pool(n_cpu) as p:
         all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
     all_charges = [chg for chgs in all_charges for chg in chgs]
     all_charges -= (np.sum(all_charges) - molecule.total_chg) / len(all_charges)
     charges = all_charges
+
+    for a,b in zip(molecule.ats_srepr, charges):
+        print(a,b)
+
     with open(f"{data_dir}/charges.txt", "w") as chg_file:
         chg_file.write(f"{molecule.code}\n" + ' '.join([str(charge) for charge in charges]) + " \n")
     pqr_file_lines = open(f"{pdb_file[:-4]}_added_H.pqr").readlines()
@@ -317,10 +318,9 @@ def calculation():
 @application.route('/wrong_structure')
 def wrong_structure():
     ID = request.args.get('ID')
-    code, ph = ID.split("_")
     message = request.args.get("message")
     return render_template('wrong_structure.html',
-                           code=code,
+                           code=ID.split("_")[0],
                            ID=ID,
                            message=message)
 
@@ -337,13 +337,13 @@ def progress():
 def results():
     ID = request.args.get('ID')
     data_dir = f"{root_dir}/calculated_structures/{ID}"
-    code, ph = ID.split("_")
+    code, ph, alphafold_prediction_version = ID.split("_")
     try:
         absolute_charges = [abs(float(x)) for x in open(f"{data_dir}/charges.txt", "r").readlines()[1].split()]
     except FileNotFoundError:
         # shutil.rmtree(data_dir)
         os.system(f"rm {data_dir}")
-        flash(f'Alphafold or pdb2pqr30 error with structure "{code}"!')
+        flash(f'Alphafold2 or pdb2pqr30 error with structure "{code}"!')
         return redirect(url_for('main_site'))
 
     chg_range = round(max(absolute_charges), 4)
@@ -359,13 +359,14 @@ def results():
                            code=code,
                            n_ats=n_ats,
                            total_time=total_time,
-                           ph=ph)
+                           ph=ph,
+                           alphafold_prediction_version=alphafold_prediction_version)
 
 
 @application.route('/download_wrong_structure')
 def download_wrong_structure():
     ID = request.args.get("ID")
-    code, _ = ID.split("_")
+    code, _, _ = ID.split("_")
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
         zip.write(f"{data_dir}/{code}.pdb", arcname=f"{code}.pdb")
@@ -376,7 +377,7 @@ def download_wrong_structure():
 @application.route('/download')
 def download_charges():
     ID = request.args.get("ID")
-    code, _ = ID.split("_")
+    code, _, _ = ID.split("_")
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
         zip.write(f"{data_dir}/charges.txt", arcname=f"{code}_charges.txt")

@@ -54,6 +54,9 @@ def sqeqp_calculate(bonds,
         A_sqe[i, i] += hardness
     electronegativities -= np.dot(matrix, initial_charges)
     electronegativities += hardnesses * initial_charges
+
+
+
     B_sqe = np.dot(T, electronegativities)
     r = np.dot(np.linalg.solve(A_sqe, B_sqe), T) + initial_charges
     return r
