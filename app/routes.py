@@ -118,21 +118,11 @@ parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEq
 
 n_cpu = 1
 
-# upgradovat věci od tomáše
 
-# kontrola přímo v javascriptu
+# upgradovat věci od tomáše
 
 # dodělat organizmus a název proteinu
 
-# upravit cachování ať nežere tolik paměti
-
-# zkontrolovat, zda funguje rdkit exception!!
-
-# dát v results data o molekule a viev vedle sebe
-
-# přidat do init skriptu přidání modulů pro apache pro HTTPS
-
-# title
 
 def page_log(data_dir,
              step,
@@ -230,7 +220,9 @@ def calculation():
     os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --titration-state-method propka --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {data_dir}/propka.log 2>&1 ")
     # add root for obabel!!!!
-    os.system(f"obabel -ipdb {pdb_file_with_hydrogens} -ommcif -O {data_dir}/{code}_added_H.cif")
+    # os.system(f"obabel -ipdb {pdb_file_with_hydrogens} -ommcif -O {data_dir}/{code}_added_H.cif")
+    os.system(f"gemmi convert {pdb_file_with_hydrogens} {data_dir}/{code}_added_H.cif")
+
     page_log(data_dir,step_counter, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
     step_counter += 1
 
@@ -250,12 +242,12 @@ def calculation():
 
     empirical_method = "SQEqp"
     if empirical_method == "SQEqp":
-        page_log(data_dir,step_counter, "Precalculate parameters...")
+        page_log(data_dir,step_counter, "Assigning parameters...")
         molecule.precalc_params, molecule.precalc_bond_hardnesses = precalculate_parameters_SQEqp(molecule.ats_srepr,
                                                                                             molecule.bonds_srepr,
                                                                                             parameters_SQEqp,
                                                                                             bond_hardnesses_SQEqp)
-        page_log(data_dir, step_counter, f"Parameters precalculated. ({round(time() - s, 2)}s)",
+        page_log(data_dir, step_counter, f"Parameters assigned. ({round(time() - s, 2)}s)",
                  delete_last_line=True)
         step_counter += 1
 
@@ -345,15 +337,15 @@ def results():
         absolute_charges = [abs(float(x)) for x in open(f"{data_dir}/charges.txt", "r").readlines()[1].split()]
     except FileNotFoundError:
         # shutil.rmtree(data_dir)
-        os.system(f"rm {data_dir}")
-        flash(f'Alphafold2 or pdb2pqr30 error with structure "{code}"!')
+        os.system(f"rm -r {data_dir}")
+        flash(f'Unexpected error with structure "{code}" AlphaFold2 prediction version "{alphafold_prediction_version}" and pH "{ph}"!')
         return redirect(url_for('main_site'))
 
     chg_range = round(max(absolute_charges), 4)
     n_ats = len(absolute_charges)
     total_time = f"{round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f'{data_dir}/page_log.txt').readlines()]), 2)} seconds"
     if request.args.get("from_cache"):
-        total_time = f"{total_time} (The charges have already been calculated earlier and the results are taken from memory.)"
+        total_time = f"{total_time} (The charges have already been calculated and the results are taken from cache.)"
 
 
     return render_template('results.html',
