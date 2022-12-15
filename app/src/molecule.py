@@ -17,7 +17,7 @@ class Substructure:
         #self.surfaces = np.concatenate([res.surfaces for res in residues])
         self.coordinates = np.concatenate([res.coordinates for res in residues], axis=0)
         self.precalc_params = np.concatenate([res.precalc_params for res in residues], axis=0)
-        self.total_chg = sum([chg for res in residues for chg in res.propka_charges])
+        self.total_chg = sum([chg for res in residues for chg in res.mean_qm_chgs])
         precalc_bond_hardnesses = [hardness for res in residues for hardness in res.precalc_bond_hardnesses]
         bonds = [bond for res in residues for bond in res.bonds]
 
@@ -51,7 +51,7 @@ class Residue:
                  number: int,
                  coordinates: np.array,
                  #surfaces: np.array,
-                 propka_charges: np.array,
+                 mean_qm_chgs: np.array,
                  indices: np.array,
                  precalc_params: np.array):
 
@@ -60,7 +60,7 @@ class Residue:
         self.coordinates = coordinates
         self.coordinates_mean = np.mean(self.coordinates, axis=0)
         #self.surfaces = surfaces
-        self.propka_charges = propka_charges
+        self.mean_qm_chgs = mean_qm_chgs
         self.indices = indices
         self.precalc_params = precalc_params
 
@@ -73,9 +73,8 @@ class Molecule:
         self.code = code
 
         # load charges from propka
-        self.propka_charges = [float(line.split()[8]) for line in
-                               open(pdb_file.replace(".pdb", ".pqr"), "r").readlines()[:-2]]
-        self.total_chg = round(sum(self.propka_charges))
+        self.total_chg = round(sum([float(line.split()[8]) for line in
+                               open(pdb_file.replace(".pdb", ".pqr"), "r").readlines()[:-2]]))
 
         # load molecule by rdkit
         Chem.WrapLogs()
@@ -116,17 +115,6 @@ class Molecule:
         bonds_srepr = [f"{'-'.join(sorted([ats_sreprba[ba1], ats_sreprba[ba2]]))}-{bond_type}"
                        for ba1, ba2, bond_type in bonds]
 
-        # aromaticity of HIP
-        """
-        bonds_srepr_modified = []
-        for bond in bonds_srepr:
-            if bond not in ["C/HNN-N/CCH-1", "C/CCN-N/CCH-1", "C/CHN-N/CCH-1", "C/CCN-C/CHN-2"]:
-                bonds_srepr_modified.append(bond)
-            else:
-                bonds_srepr_modified.append(bond[:-1] + "4")
-        bonds_srepr = bonds_srepr_modified
-        """
-        # aromaticity of HIP
 
         real_ats_types = {'C/CCC', 'C/CCCH', 'C/CCH', 'C/CCHH', 'C/CCHN', 'C/CCHO', 'C/CCN', 'C/CCO', 'C/CHHH',
                           'C/CHHN', 'C/CHHO', 'C/CHHS',
@@ -134,11 +122,52 @@ class Molecule:
                           'N/CCC', 'N/CCH',
                           'N/CCHH', 'N/CHH', 'N/CHHH', 'O/C', 'O/CH', 'S/CC', 'S/CH', 'S/CS', 'S/C'}
 
+
+
+
         for i, atba in enumerate(ats_sreprba):
             if atba not in real_ats_types:
                 raise ValueError(f"{i+1}")
+
+        mean_qm_charges = {'C/CCC': -0.060579386,
+         'C/CCCH': -0.21524236,
+         'C/CCH': -0.22295399,
+         'C/CCHH': -0.43542072,
+         'C/CCHN': -0.11663078,
+         'C/CCHO': 0.12791422,
+         'C/CCN': 0.12563628,
+         'C/CCO': 0.33326367,
+         'C/CHHH': -0.63340616,
+         'C/CHHN': -0.2587134,
+         'C/CHHO': -0.03784664,
+         'C/CHHS': -0.5484944,
+         'C/CHN': -0.045613743,
+         'C/CNO': 0.69618624,
+         'C/COO': 0.7912705,
+         'C/HHHS': -0.7433207,
+         'C/HNN': 0.18661118,
+         'C/NNN': 0.67275774,
+         'H/C': 0.22627519,
+         'H/N': 0.43427196,
+         'H/O': 0.47808334,
+         'H/S': 0.034808055,
+         'N/CC': -0.5559488,
+         'N/CCC': -0.46503165,
+         'N/CCH': -0.64744794,
+         'N/CCHH': -0.5750265,
+         'N/CHH': -0.8230933,
+         'N/CHHH': -0.7491838,
+         'O/C': -0.67871934,
+         'O/CH': -0.750477,
+         'S/C': -0.5285528,
+         'S/CC': 0.18457225,
+         'S/CH': 0.01818913,
+         'S/CS': 0.09353083}
+        self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
+
         self.ats_srepr = List(ats_sreprba)
         self.bonds_srepr = List(bonds_srepr)
+
 
 
     def create_ba(self) -> list:
@@ -170,7 +199,7 @@ class Molecule:
                                              number-1,
                                              self.coordinates[start_index: i],
                                              #self.surfaces[start_index: i],
-                                             self.propka_charges[start_index: i],
+                                             self.mean_qm_chgs[start_index: i],
                                              [x for x in range(start_index, i)],
                                              self.precalc_params[start_index: i]))
                 start_index = i
@@ -181,7 +210,7 @@ class Molecule:
                                      number-1,
                                      self.coordinates[start_index: ],
                                      #self.surfaces[start_index: ],
-                                     self.propka_charges[start_index: ],
+                                     self.mean_qm_chgs[start_index: ],
                                      [x for x in range(start_index, self.n_ats)],
                                      self.precalc_params[start_index: ]))
 
@@ -258,7 +287,7 @@ class Molecule:
                              'TYR': 4.514843482397014,
                              'VAL': 2.951599144669813}
 
-                if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 3:
+                if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 5:
                     residues.append(self.residues[i])
             self.substructures.append(Substructure(residues))
 
