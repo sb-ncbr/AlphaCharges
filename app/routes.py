@@ -143,7 +143,13 @@ def page_log(data_dir,
 @application.route('/', methods=['GET', 'POST'])
 def main_site():
     if request.method == 'POST':
-        code = request.form['code']
+        try:
+            code = request.form['code']
+        except OSError:
+            # https://stackoverflow.com/questions/48780324/flask-bad-request-the-browser-or-proxy-sent-a-request-that-this-server-could
+            flash('Connection problem. Try it again.')
+            return render_template('index.html')
+
         action = request.form["action"]
         if action == "settings":
             return render_template('settings.html',
@@ -219,10 +225,6 @@ def calculation():
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
     os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --titration-state-method propka --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {data_dir}/propka.log 2>&1 ")
-    # add root for obabel!!!!
-    # os.system(f"obabel -ipdb {pdb_file_with_hydrogens} -ommcif -O {data_dir}/{code}_added_H.cif")
-    os.system(f"gemmi convert {pdb_file_with_hydrogens} {data_dir}/{code}_added_H.cif")
-
     page_log(data_dir,step_counter, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
     step_counter += 1
 
@@ -289,8 +291,11 @@ def calculation():
     all_charges -= (np.sum(all_charges) - molecule.total_chg) / len(all_charges)
     charges = all_charges
 
+    # writing charges to txt
     with open(f"{data_dir}/charges.txt", "w") as chg_file:
         chg_file.write(f"{molecule.code}\n" + ' '.join([str(charge) for charge in charges]) + " \n")
+
+    # writing charges to pqr
     pqr_file_lines = open(f"{pdb_file[:-4]}_added_H.pqr").readlines()
     c = 0
     new_lines = []
@@ -302,6 +307,27 @@ def calculation():
             new_lines.append(line)
     with open(f"{pdb_file[:-4]}_added_H.pqr", "w") as pqr_file:
         pqr_file.write("".join(new_lines))
+
+    # writing charges to mmcif
+    os.system(f"gemmi convert {pdb_file_with_hydrogens} {data_dir}/{code}_added_H.cif")
+    mmcif_lines_chgs = []
+    c = 0
+    for line in open(f"{data_dir}/{code}_added_H.cif", "r").readlines():
+        sl = line.split()
+        if len(sl) > 2 and sl[0].isdigit() and sl[1] in "HCNOS":
+            sl[-4] = str(round(charges[c], 4))
+            c += 1
+            mmcif_lines_chgs.append(" ".join(sl) + "\n")
+        else:
+            mmcif_lines_chgs.append(line)
+    with open(f"{data_dir}/{code}_added_H.cif", "w") as mmcif_file:
+        mmcif_file.write("".join(mmcif_lines_chgs))
+
+
+
+    # with open(f"{data_dir}/{code}_added_H.cif", "w") as mmcif_file:
+
+
 
     page_log(data_dir,step_counter, f"Partial atomic charges calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
     return redirect(url_for('results',
@@ -343,9 +369,12 @@ def results():
 
     chg_range = round(max(absolute_charges), 4)
     n_ats = len(absolute_charges)
-    total_time = f"{round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f'{data_dir}/page_log.txt').readlines()]), 2)} seconds"
-    if request.args.get("from_cache"):
-        total_time = f"{total_time} (The charges have already been calculated and the results are taken from cache.)"
+
+    # for line in open(f'{data_dir}/page_log.txt').readlines():
+    #     print(line)
+    # total_time = f"{round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f'{data_dir}/page_log.txt').readlines()]), 2)} seconds"
+    # if request.args.get("from_cache"):
+    #     total_time = f"{total_time} (The charges have already been calculated and the results are taken from cache.)"
 
 
     return render_template('results.html',
@@ -353,7 +382,7 @@ def results():
                            chg_range=chg_range,
                            code=code,
                            n_ats=n_ats,
-                           total_time=total_time,
+                           # total_time=total_time,
                            ph=ph,
                            alphafold_prediction_version=alphafold_prediction_version)
 
