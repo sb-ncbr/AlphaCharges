@@ -304,9 +304,17 @@ def calculation():
     s = time()
 
 
-    with Pool(n_cpu) as p:
-        all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
-    all_charges = [chg for chgs in all_charges for chg in chgs]
+    #with Pool(n_cpu) as p:
+    #    all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
+    #all_charges = [chg for chgs in all_charges for chg in chgs]
+
+    all_charges = []
+    for substructure in molecule.substructures:
+        all_charges.extend(calculate_charges(substructure))
+
+
+
+
     all_charges -= (np.sum(all_charges) - molecule.total_chg) / len(all_charges)
     charges = all_charges
 
