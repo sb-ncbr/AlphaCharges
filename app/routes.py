@@ -1,4 +1,4 @@
-from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, abort, Flask
+from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, abort, Flask, Markup
 from time import time
 import requests
 from src.molecule import Molecule
@@ -171,14 +171,9 @@ def main_site():
                                         code=code)
 
             ID = f"{code}_{ph}_{alphafold_prediction_version}"
-
             if ID in currently_running:
-                flash('The partial atomic charges for your input are just calculated by another user. Please come back for the results in a few minutes.')
+                flash(Markup(f'The partial atomic charges for your input are just calculated. For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" target="_blank" rel="noreferrer">https://alphacharges.ncbr.muni.cz/results?ID={ID}</a>. after a while.'))
                 return render_template('index.html')
-            else:
-                currently_running.update([ID])
-
-            data_dir = f"{root_dir}/calculated_structures/{ID}"
 
             # check whether the structure with the given setting has already been calculated
             if os.path.isdir(f"{root_dir}/calculated_structures/{ID}"):
@@ -188,19 +183,10 @@ def main_site():
                 else:
                     os.system(f"rm -r {root_dir}/calculated_structures/{ID}")
 
-
-            s = time()
-            response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb")
+            response = requests.head(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb")
             if response.status_code != 200:
                 flash(f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
                 return render_template('index.html')
-
-            os.mkdir(data_dir)
-            os.mknod(f"{data_dir}/page_log.txt")
-            with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
-                pdb_file.write(response.text)
-            page_log(data_dir, 1, f"Structure downloaded. ({round(time() - s, 2)}s)")
-
 
             # start calculation
             return render_template('computation_progress.html',
@@ -219,8 +205,34 @@ def main_site():
 @application.route("/calculation")
 def calculation():
     # download and save PDB file
+    s = time()
     ID = request.args.get("ID")
-    code, ph, _ = ID.split("_")
+    currently_running.update([ID])
+    data_dir = f"{root_dir}/calculated_structures/{ID}"
+    os.mkdir(data_dir)
+    os.mknod(f"{data_dir}/page_log.txt")
+
+
+    code, ph, alphafold_prediction_version = ID.split("_")
+    response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb")
+
+    if response.status_code != 200:
+        flash(f'Connection error. Please try it later.')
+        return render_template('index.html')
+
+
+    with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
+        pdb_file.write(response.text)
+    page_log(data_dir, 1, f"Structure downloaded. ({round(time() - s, 2)}s)")
+
+
+
+
+
+
+
+
+
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     with open(f"{root_dir}/logs.txt", "a") as log_file:
         log_file.write(f"{request.remote_addr} {code} {ph} {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
@@ -332,6 +344,7 @@ def calculation():
 
 
     page_log(data_dir,step_counter, f"Partial atomic charges calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
+    currently_running.remove(ID)
     return redirect(url_for('results',
                             ID=ID))
 
@@ -361,18 +374,13 @@ def results():
     ID = request.args.get('ID')
 
     if ID is None:
-        flash(f'No ID parameter was entered in your request! The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction_version>.')
+        flash(f'No ID parameter was entered in your request! The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.')
         return redirect(url_for('main_site'))
-
-    try:
-        currently_running.remove(ID)
-    except:
-        pass
 
     try:
         code, ph, alphafold_prediction_version = ID.split("_")
     except:
-        flash(f'The ID was entered in the wrong format. The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction_version>.')
+        flash(f'The ID was entered in the wrong format. The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.')
         return redirect(url_for('main_site'))
 
     data_dir = f"{root_dir}/calculated_structures/{ID}"
