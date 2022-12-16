@@ -18,7 +18,7 @@
         </div>
 
         <p>
-            <span style="font-weight:bold"> UnitProt code:</span> {{ code }}
+            <span style="font-weight:bold"> UniProt code:</span>  <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}"> {{ code }} </a>
         </p>
 
         <p>
@@ -39,21 +39,13 @@
 {% endblock body %}
 {% block scripts %}
     <script>
-<!--        function navigate() {-->
-<!--            window.location.href = '{{ url_for("results", ID=ID) }}';-->
-<!--        }-->
-<!--        fetch('{{ url_for("calculation", ID=ID) }}').then(navigate);-->
-
-fetch('{{ url_for("calculation", ID=ID) }}').then(
-    response => {
-        if (response.redirected) {
-            window.location.href = response.url
-        }
-    }
-)
-
-
-
+        fetch('{{ url_for("calculation", ID=ID) }}').then(
+            response => {
+                if (response.redirected) {
+                    window.location.href = response.url
+                }
+            }
+        )
     </script>
 
 

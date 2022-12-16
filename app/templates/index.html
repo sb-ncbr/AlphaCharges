@@ -42,21 +42,17 @@
 
             <div class="form-group col-sm-6 col-lg-3 font-weight-bold">
                 <label style="color:black" for="title">UniProt code:</label>
-                <input type="text" name="code" required="required"
-                       class="form-control" placeholder="e.g., P34712, L8BU87">
+                <input type="text" name="code" required="required" class="form-control" placeholder="e.g., P34712, L8BU87" title="UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.">
             </div>
+
             <div class="form-group">
                 <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Calculate charges</button>
                 <button type="submit" class="btn btn-secondary" name="action" value="settings">Setup calculation</button>
-
-
             </div>
 
         </form>
 
-
         <hr>
-
                     <div class="row">
                 <div class="col">
                     <h3>Examples</h3>
@@ -84,21 +80,25 @@
                 <div class="col-lg-4">
                     <b>Pepsin</b><br>
                     <p style="text-align:center;"><img src="/static/pepsin.png" alt="Pepsin" style="height: 200px"></p>
+<!--                    <p><small>-->
+<!--                        Pepsin is the enzyme that is majorly involved in proteins digestion in the stomach. It’s secreted as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin it is most effective at a pH of approximately 1.5 to 2 and it became inactive, when the pH rises above 6 (see more details <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">here</a>). Pepsin remains structurally stable until at least a pH of 8. Differences in a charge distribution between its active form (pH 2) and inactive form (pH 7) can be seen in this use case.-->
+<!--                    </small></p>-->
+
                     <p><small>
-                        Pepsin is the enzyme that is majorly involved in proteins digestion in the stomach. It’s secreted as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin it is most effective at a pH of approximately 1.5 to 2 and it became inactive, when the pH rises above 6 (see more details <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">here</a>). Pepsin remains structurally stable until at least a pH of 8. Differences in a charge distribution between its active form (pH 2) and inactive form (pH 7) can be seen in this use case.
+                    Pepsin is the enzyme that is majorly involved in proteins digestion in the stomach. It is secreted as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin is the most effective at a pH of approximately 1.5 to 2 and it became inactive, when the pH rises above 6 (see more details <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank">here</a>). Pepsin remains structurally stable until at least a pH of 8. Differences in a charge distribution between its active form (pH 2) and inactive form (pH 8) can be seen in this use case. The alkaline environment causes an increase in negative charges which contributes to the structural instability of the pepsin, causing the shift to an inactive form of the protein (more details are available <a href="https://academic.oup.com/peds/article/14/9/669/1551528?login=false" target="_blank">here</a> and <a href="https://www.sciencedirect.com/science/article/abs/pii/S0141022921001290?via%3Dihub" target="_blank">here</a>).
                     </small></p>
 
                     <div class="text-center">
                         <form method=post enctype=multipart/form-data class="btn">
                         <input type="hidden" name="ph" value='2' />
                         <input type="hidden" name="prediction_version" value='4' />
-                        <input type="hidden" name="code" value='B7ZW16' />
-                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Activated</button>
+                        <input type="hidden" name="code" value='P00791' />
+                        <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Active</button>
                         </form>
                         <form method=post enctype=multipart/form-data class="btn">
-                        <input type="hidden" name="ph" value='7' />
+                        <input type="hidden" name="ph" value='8' />
                         <input type="hidden" name="prediction_version" value='4' />
-                        <input type="hidden" name="code" value='B7ZW16' />
+                        <input type="hidden" name="code" value='P00791' />
                         <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Inactive</button>
                         </form>
                         </div>
@@ -109,7 +109,7 @@
                     <p style="text-align:center;"><img src="/static/pin.png"
                                                        alt="pin" style="height: 200px"></p>
                     <p><small>
-                        The PIN family proteins control plant growth by regulating auxin export from the cytosol to the extracellular space. Eight types of PIN proteins are known (PIN1-PIN8) and this year, structures of three of them were discovered and published in Nature (i.e., articles about <a href="https://www.nature.com/articles/s41586-022-05143-9" target="_blank">PIN1</a>, <a href="https://www.nature.com/articles/s41586-022-05142-w" target="_blank">PIN3</a>, <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank">PIN8</a>). Partial atomic charges play an important role in PINs functionality. The PIN protein part inside the cytosol (containing the cytosolic loop) is charged more than the part outside the cytosol. Questionable is a charge distribution of PIN5, which structure differs from other PINs (see this <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank">article</a>) and was not experimentally determined yet. In the use case, you can compare charge distribution of AlphaFold2 predicted PINs from A. thaliana.
+                        The PIN family proteins control plant growth by regulating auxin export from the cytosol to the extracellular space. Eight types of PIN proteins are known (PIN1-PIN8) and this year, structures of three of them were discovered and published in Nature (i.e., articles about <a href="https://www.nature.com/articles/s41586-022-05143-9" target="_blank">PIN1</a>, <a href="https://www.nature.com/articles/s41586-022-05142-w" target="_blank">PIN3</a>, <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank">PIN8</a>). Partial atomic charges play an important role in PINs functionality. The PIN protein part inside the cytosol (containing the cytosolic loop) is charged more than the part outside the cytosol. Questionable is a charge distribution of PIN5, which structure differs from other PINs (see this <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank">article</a>) and was not experimentally determined yet. In the use case, you can compare charge distribution of AlphaFold2 predicted PINs from <em>A. thaliana</em>.
                     </small>
                     </p>
                     <div class="text-center">
@@ -166,7 +166,7 @@
         <div class="row">
                 <div class="col">
                     <small>
-                        If you found <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> helpful, please refer this web page, the manuscript is in preparation. Are you interested in a research collaboration? Feel free to <a href="mailto:radka.svobodova@ceitec.muni.cz">contact us</a>.
+                        If you found <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> helpful, please refer this web page, the manuscript is in preparation. Are you interested in a research collaboration? Feel free to <a href="mailto:ondrej.schindler@mail.muni.cz">contact us</a>.
                     </small>
                 </div>
             </div>
@@ -178,3 +178,4 @@
     </div>
 
 {% endblock body %}
+

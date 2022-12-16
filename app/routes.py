@@ -183,16 +183,15 @@ def main_site():
 
 
 
-            os.mkdir(data_dir)
-            os.mknod(f"{data_dir}/page_log.txt")
+
 
             s = time()
             response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb")
             if response.status_code != 200:
-                # shutil.rmtree(data_dir)
-                os.system(f"rm -r {data_dir}")
-                flash(f'No structure with UniProt code "{code}" in prediction version "{alphafold_prediction_version}" found in the AlphaFoldDB database.')
+                flash(f'The structure with UniProt code "{code}" in prediction version "{alphafold_prediction_version}" is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
                 return render_template('index.html')
+            os.mkdir(data_dir)
+            os.mknod(f"{data_dir}/page_log.txt")
             with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
                 pdb_file.write(response.text)
             page_log(data_dir, 1, f"Structure downloaded. ({round(time() - s, 2)}s)")
@@ -310,18 +309,18 @@ def calculation():
 
     # writing charges to mmcif
     os.system(f"gemmi convert {pdb_file_with_hydrogens} {data_dir}/{code}_added_H.cif")
-    mmcif_lines_chgs = []
-    c = 0
-    for line in open(f"{data_dir}/{code}_added_H.cif", "r").readlines():
-        sl = line.split()
-        if len(sl) > 2 and sl[0].isdigit() and sl[1] in "HCNOS":
-            sl[-4] = str(round(charges[c], 4))
-            c += 1
-            mmcif_lines_chgs.append(" ".join(sl) + "\n")
-        else:
-            mmcif_lines_chgs.append(line)
-    with open(f"{data_dir}/{code}_added_H.cif", "w") as mmcif_file:
-        mmcif_file.write("".join(mmcif_lines_chgs))
+    # mmcif_lines_chgs = []
+    # c = 0
+    # for line in open(f"{data_dir}/{code}_added_H.cif", "r").readlines():
+    #     sl = line.split()
+    #     if len(sl) > 2 and sl[0].isdigit() and sl[1] in "HCNOS":
+    #         sl[-4] = str(round(charges[c], 4))
+    #         c += 1
+    #         mmcif_lines_chgs.append(" ".join(sl) + "\n")
+    #     else:
+    #         mmcif_lines_chgs.append(line)
+    # with open(f"{data_dir}/{code}_added_H.cif", "w") as mmcif_file:
+    #     mmcif_file.write("".join(mmcif_lines_chgs))
 
 
 
