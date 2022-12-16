@@ -138,6 +138,7 @@ def page_log(data_dir,
     with open(f"{data_dir}/page_log.txt", "w") as page_log_file:
         page_log_file.write(logs)
 
+currently_running = set()
 
 
 @application.route('/', methods=['GET', 'POST'])
@@ -152,6 +153,7 @@ def main_site():
 
         action = request.form["action"]
         if action == "settings":
+            # tady přidat ping
             return render_template('settings.html',
                                    code=code)
         elif action == "calculate charges":
@@ -168,33 +170,37 @@ def main_site():
                 return render_template('settings.html',
                                         code=code)
 
-
             ID = f"{code}_{ph}_{alphafold_prediction_version}"
+
+            if ID in currently_running:
+                flash('The partial atomic charges for your input are just calculated by another user. Please come back for the results in a few minutes.')
+                return render_template('index.html')
+            else:
+                currently_running.update([ID])
+
             data_dir = f"{root_dir}/calculated_structures/{ID}"
 
             # check whether the structure with the given setting has already been calculated
             if os.path.isdir(f"{root_dir}/calculated_structures/{ID}"):
                 if os.path.isfile(f"{root_dir}/calculated_structures/{ID}/charges.txt"):
                     return redirect(url_for('results',
-                                            ID=ID,
-                                            from_cache=True))
+                                            ID=ID))
                 else:
                     os.system(f"rm -r {root_dir}/calculated_structures/{ID}")
-
-
-
 
 
             s = time()
             response = requests.get(f"https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb")
             if response.status_code != 200:
-                flash(f'The structure with UniProt code "{code}" in prediction version "{alphafold_prediction_version}" is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
+                flash(f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
                 return render_template('index.html')
+
             os.mkdir(data_dir)
             os.mknod(f"{data_dir}/page_log.txt")
             with open(f"{data_dir}/{code}.pdb", "w") as pdb_file:
                 pdb_file.write(response.text)
             page_log(data_dir, 1, f"Structure downloaded. ({round(time() - s, 2)}s)")
+
 
             # start calculation
             return render_template('computation_progress.html',
@@ -205,12 +211,14 @@ def main_site():
 
     else:
         return render_template('index.html')
-
+#
+#
+# @application.route("/computation_progress")
 
 
 @application.route("/calculation")
 def calculation():
-    # download and save PDB file (and cif todo)
+    # download and save PDB file
     ID = request.args.get("ID")
     code, ph, _ = ID.split("_")
     data_dir = f"{root_dir}/calculated_structures/{ID}"
@@ -323,11 +331,6 @@ def calculation():
     #     mmcif_file.write("".join(mmcif_lines_chgs))
 
 
-
-    # with open(f"{data_dir}/{code}_added_H.cif", "w") as mmcif_file:
-
-
-
     page_log(data_dir,step_counter, f"Partial atomic charges calculated. ({round(time() - s, 2)}s)", delete_last_line=True)
     return redirect(url_for('results',
                             ID=ID))
@@ -356,24 +359,34 @@ def progress():
 @application.route('/results')
 def results():
     ID = request.args.get('ID')
+
+    if ID is None:
+        flash(f'No ID parameter was entered in your request! The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction_version>.')
+        return redirect(url_for('main_site'))
+
+    try:
+        currently_running.remove(ID)
+    except:
+        pass
+
+    try:
+        code, ph, alphafold_prediction_version = ID.split("_")
+    except:
+        flash(f'The ID was entered in the wrong format. The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction_version>.')
+        return redirect(url_for('main_site'))
+
     data_dir = f"{root_dir}/calculated_structures/{ID}"
-    code, ph, alphafold_prediction_version = ID.split("_")
+
     try:
         absolute_charges = [abs(float(x)) for x in open(f"{data_dir}/charges.txt", "r").readlines()[1].split()]
     except FileNotFoundError:
         # shutil.rmtree(data_dir)
         os.system(f"rm -r {data_dir}")
-        flash(f'Unexpected error with structure "{code}" AlphaFold2 prediction version "{alphafold_prediction_version}" and pH "{ph}"!')
+        flash(f'There are no results for structure with UnitProt {code} in AlphaFold2 prediction version {alphafold_prediction_version} and pH {ph}.')
         return redirect(url_for('main_site'))
 
     chg_range = round(max(absolute_charges), 4)
     n_ats = len(absolute_charges)
-
-    # for line in open(f'{data_dir}/page_log.txt').readlines():
-    #     print(line)
-    # total_time = f"{round(sum([float(line.split('(')[1].split(')')[0][:-1]) for line in open(f'{data_dir}/page_log.txt').readlines()]), 2)} seconds"
-    # if request.args.get("from_cache"):
-    #     total_time = f"{total_time} (The charges have already been calculated and the results are taken from cache.)"
 
 
     return render_template('results.html',
@@ -381,7 +394,6 @@ def results():
                            chg_range=chg_range,
                            code=code,
                            n_ats=n_ats,
-                           # total_time=total_time,
                            ph=ph,
                            alphafold_prediction_version=alphafold_prediction_version)
 

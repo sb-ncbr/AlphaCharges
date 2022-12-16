@@ -18,7 +18,7 @@
         </div>
 
         <p>
-            <span style="font-weight:bold"> UniProt code:</span>  <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}"> {{ code }} </a>
+            <span style="font-weight:bold"> UniProt code:</span>  <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}" target="_blank" rel="noreferrer"> {{ code }} </a>
 
         </p>
 
@@ -31,12 +31,6 @@
         <p>
             <span style="font-weight:bold"> Number of atoms:</span> {{ n_ats }}
         </p>
-
-
-<!--        <p>-->
-<!--            <span style="font-weight:bold"> Calculation time:</span> {{ total_time }}-->
-<!--        </p>-->
-
         <hr>
         <div class="row">
             <div class="col-md-6">
@@ -126,7 +120,6 @@
 {% block scripts %}
     <script src="{{ url_for('static', filename='jquery/jquery-3.6.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
-<!--    <script src="{{ url_for('static', filename='bootstrap-select/bootstrap-select.min.js') }}"></script>-->
     <script src="{{ url_for('static', filename='litemol/LiteMol-plugin.min.js') }}"></script>
     <script src="{{ url_for('static', filename='litemol/static/js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
