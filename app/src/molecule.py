@@ -1,6 +1,11 @@
 import sys
 from io import StringIO
 from multiprocessing import Pool
+import os
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import numpy as np
 from numba import jit
 from numba.typed import List

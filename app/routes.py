@@ -2,7 +2,12 @@ from flask import render_template, flash, request, send_from_directory, redirect
 from time import time
 import requests
 from src.molecule import Molecule
+
 import os
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import shutil
 from multiprocessing import Pool
 from src.SQEqp import calculate_charges
