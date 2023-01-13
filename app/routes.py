@@ -177,7 +177,7 @@ def main_site():
 
             ID = f"{code}_{ph}_{alphafold_prediction_version}"
             if ID in currently_running:
-                flash(Markup(f'The partial atomic charges for your input are just calculated. For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" target="_blank" rel="noreferrer">https://alphacharges.ncbr.muni.cz/results?ID={ID}</a>. after a while.'))
+                flash(Markup(f'The partial atomic charges for your input are just calculated. For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" target="_blank" rel="noreferrer">https://alphacharges.ncbr.muni.cz/results?ID={ID}</a> after a while.'))
                 return render_template('index.html')
 
             # check whether the structure with the given setting has already been calculated
@@ -202,12 +202,9 @@ def main_site():
 
     else:
         return render_template('index.html')
-#
-#
-# @application.route("/computation_progress")
 
 
-@application.route("/calculation")
+@application.route("/calculation", methods=['POST'])
 def calculation():
     # download and save PDB file
     s = time()
@@ -247,7 +244,7 @@ def calculation():
     s = time()
     pdb_file = f"{data_dir}/{code}.pdb"
     pdb_file_with_hydrogens = f"{pdb_file[:-4]}_added_H.pdb"
-    os.system(f"{pdb_to_pqr_path} --log-level DEBUG --noopt --titration-state-method propka --with-ph {ph} "
+    os.system(f"/opt/venv/bin/pdb2pqr30 --log-level DEBUG --noopt --titration-state-method propka --with-ph {ph} "
               f"--pdb-output {pdb_file_with_hydrogens} {pdb_file} {pdb_file[:-4]}_added_H.pqr  > {data_dir}/propka.log 2>&1 ")
     page_log(data_dir,step_counter, f"Structure protonated. ({round(time() - s, 2)}s)", delete_last_line=True)
     step_counter += 1

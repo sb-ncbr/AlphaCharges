@@ -38,7 +38,7 @@
 {% endblock body %}
 {% block scripts %}
     <script>
-        fetch('{{ url_for("calculation", ID=ID) }}').then(
+        fetch('{{ url_for("calculation", ID=ID) }}', {method: "POST"}).then(
             response => {
                 if (response.redirected) {
                     window.location.href = response.url
