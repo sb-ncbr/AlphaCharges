@@ -22,12 +22,11 @@ sudo a2ensite AlphaCharges.conf
 
 sudo a2enmod ssl
 sudo a2enmod brotli
+sudo a2enmod http2
 
 sudo systemctl restart apache2
 
 # after update
-# change routes for pdb2pqr30 and openbabel in routes.py
 # sudo chown -R www-data:www-data /opt
-
 # cat /var/log/apache2/error.log
 

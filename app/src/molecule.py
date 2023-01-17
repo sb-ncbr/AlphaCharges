@@ -1,12 +1,7 @@
 import sys
+import numpy as np
 from io import StringIO
 from multiprocessing import Pool
-import os
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-
-import numpy as np
 from numba import jit
 from numba.typed import List
 from rdkit import Chem
@@ -16,7 +11,6 @@ from sklearn.neighbors import KDTree as kdtreen
 class Substructure:
     def __init__(self,
                  residues: list):
-
         self.residues = residues
         self.calculated_atoms = len(residues[0].coordinates)
         #self.surfaces = np.concatenate([res.surfaces for res in residues])
@@ -72,19 +66,16 @@ class Residue:
 
 class Molecule:
     def __init__(self,
-                 code: str,
-                 pdb_file: str):
+                 pdb_file: str,
+                 pqr_file: str):
 
-        self.code = code
-
-        # load charges from propka
+        # load charges from propka, sum of charges are used as total charge of molecule
         self.total_chg = round(sum([float(line.split()[8]) for line in
-                               open(pdb_file.replace(".pdb", ".pqr"), "r").readlines()[:-2]]))
+                               open(pqr_file, "r").readlines()[:-2]]))
 
         # load molecule by rdkit
         Chem.WrapLogs()
         terminal_stdout = sys.stderr
-
         sio = sys.stderr = StringIO()
         self.rdkit_mol = Chem.MolFromPDBFile(pdb_file,
                                              removeHs=False,
@@ -92,6 +83,8 @@ class Molecule:
         if self.rdkit_mol is None:
             raise ValueError(f"{sio.getvalue().split()[6]}")
         sys.stderr = terminal_stdout
+
+        # load atoms and bonds
         self.symbols = [atom.GetSymbol() for atom in self.rdkit_mol.GetAtoms()]
         self.n_ats = len(self.symbols)
         self.calculated_atoms = self.n_ats
@@ -115,25 +108,21 @@ class Molecule:
             pos = self.rdkit_mol.GetConformer().GetAtomPosition(i)
             coordinates.append((pos.x, pos.y, pos.z))
         self.coordinates = np.array(coordinates, dtype=np.float32)
-
         ats_sreprba = self.create_ba()
         bonds_srepr = [f"{'-'.join(sorted([ats_sreprba[ba1], ats_sreprba[ba2]]))}-{bond_type}"
                        for ba1, ba2, bond_type in bonds]
 
-
+        # control, whether molecule consist of standart aminoacids
         real_ats_types = {'C/CCC', 'C/CCCH', 'C/CCH', 'C/CCHH', 'C/CCHN', 'C/CCHO', 'C/CCN', 'C/CCO', 'C/CHHH',
                           'C/CHHN', 'C/CHHO', 'C/CHHS',
                           'C/CHN', 'C/CNO', 'C/COO', 'C/HHHS', 'C/HNN', 'C/NNN', 'H/C', 'H/N', 'H/O', 'H/S', 'N/CC',
                           'N/CCC', 'N/CCH',
                           'N/CCHH', 'N/CHH', 'N/CHHH', 'O/C', 'O/CH', 'S/CC', 'S/CH', 'S/CS', 'S/C'}
-
-
-
-
         for i, atba in enumerate(ats_sreprba):
             if atba not in real_ats_types:
                 raise ValueError(f"{i+1}")
 
+        # mean QM charges are used like a estimation of total charge of submolecule
         mean_qm_charges = {'C/CCC': -0.060579386,
          'C/CCCH': -0.21524236,
          'C/CCH': -0.22295399,
@@ -170,10 +159,9 @@ class Molecule:
          'S/CS': 0.09353083}
         self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
 
+        # convert to numba data structure
         self.ats_srepr = List(ats_sreprba)
         self.bonds_srepr = List(bonds_srepr)
-
-
 
     def create_ba(self) -> list:
         bonded_ats = [[] for _ in range(self.n_ats)]
@@ -184,6 +172,7 @@ class Molecule:
                 for symbol, bonded_ats in zip(self.symbols, bonded_ats)]
 
     """
+    # for sqeqps
     def calculate_surfaces(self, cpu) -> np.array:
         num_pts = 1000
         kdtree = kdtreen(self.coordinates, leaf_size=40)
@@ -193,6 +182,7 @@ class Molecule:
     """
 
     def create_submolecules(self):
+        # create residues
         self.residues = []
         number = 1
         start_index = 0
@@ -218,33 +208,26 @@ class Molecule:
                                      self.mean_qm_chgs[start_index: ],
                                      [x for x in range(start_index, self.n_ats)],
                                      self.precalc_params[start_index: ]))
-
-
         from collections import defaultdict
-
         residue_bonds = defaultdict(list)
         residue_bonds_srepr = defaultdict(list)
         inter_residues_bonds = defaultdict(list)
         inter_residues_bonds_indices = defaultdict(list)
         inter_residues_bonds_srepr = defaultdict(list)
-
         for bond, bond_s_repr in zip(self.bonds, self.precalc_bond_hardnesses):
             re0 = residues_numbers[bond[0]]-1
             re1 = residues_numbers[bond[1]]-1
             if re0  == re1:
                 residue_bonds[re0].append(bond)
                 residue_bonds_srepr[re0].append(bond_s_repr)
-
             elif re0 < re1:
                 inter_residues_bonds_indices[re0].append(re1)
                 inter_residues_bonds[re0].append(bond)
                 inter_residues_bonds_srepr[re0].append(bond_s_repr)
-
             elif re0 > re1:
                 inter_residues_bonds_indices[re1].append(re0)
                 inter_residues_bonds[re1].append(bond)
                 inter_residues_bonds_srepr[re1].append(bond_s_repr)
-
         for residuum in self.residues:
             residue_number = residuum.number
             residuum.bonds = residue_bonds[residue_number]
@@ -253,53 +236,45 @@ class Molecule:
             residuum.connected_bonds =  inter_residues_bonds[residue_number]
             residuum.connected_precalc_bond_hardnesses = inter_residues_bonds_srepr[residue_number]
 
-
-
-        # residues created
-
-
+        # create submolecules
         residues_averages = [res.coordinates_mean for res in self.residues]
         res_kdtree = kdtreen(residues_averages, leaf_size=50)
-
+        amk_radius = {'ALA': 2.48013472197102,
+                      'ARG': 4.861893836930157,
+                      'ASN': 3.223781749594369,
+                      'ASP': 2.803611164950305,
+                      'CYS': 2.5439900881094437,
+                      'GLN': 3.845641228833085,
+                      'GLU': 3.396388805414707,
+                      'GLY': 2.145581026362788,
+                      'HIS': 3.837607343643752,
+                      'ILE': 3.4050022674834866,
+                      'LEU': 3.5357084005904222,
+                      'LYS': 4.452109446576905,
+                      'MET': 4.18214798399969,
+                      'PHE': 4.117010781374703,
+                      'PRO': 2.8418414713774762,
+                      'SER': 2.499710830364658,
+                      'THR': 2.74875502488962,
+                      'TRP': 4.683613811874498,
+                      'TYR': 4.514843482397014,
+                      'VAL': 2.951599144669813}
         self.substructures = []
         for res in self.residues:
             residues = [res]
-
             distances, indices = res_kdtree.query([res.coordinates_mean], k=len(residues_averages))
             distances = distances[0][1:]
             indices = indices[0][1:]
             for d,i in zip(distances, indices):
-
-
-                amk_radius = {'ALA': 2.48013472197102,
-                             'ARG': 4.861893836930157,
-                             'ASN': 3.223781749594369,
-                             'ASP': 2.803611164950305,
-                             'CYS': 2.5439900881094437,
-                             'GLN': 3.845641228833085,
-                             'GLU': 3.396388805414707,
-                             'GLY': 2.145581026362788,
-                             'HIS': 3.837607343643752,
-                             'ILE': 3.4050022674834866,
-                             'LEU': 3.5357084005904222,
-                             'LYS': 4.452109446576905,
-                             'MET': 4.18214798399969,
-                             'PHE': 4.117010781374703,
-                             'PRO': 2.8418414713774762,
-                             'SER': 2.499710830364658,
-                             'THR': 2.74875502488962,
-                             'TRP': 4.683613811874498,
-                             'TYR': 4.514843482397014,
-                             'VAL': 2.951599144669813}
-
                 if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 5:
                     residues.append(self.residues[i])
             self.substructures.append(Substructure(residues))
 
 
-
+"""
+# for SQEqps
 @jit(nopython=True, cache=True)
-def dist(grid, c, d):
+def find_overlapping_points(grid, c, d):
     indices_to_remove = []
     e, f, g = c
     for gi, (a, b, c) in enumerate(grid):
@@ -332,5 +307,6 @@ def f2(index, at, coordinates, symbols, kdtree, num_pts):
     for i, index_near in enumerate(indices):
         near_atom_radius = vdw[symbols[index_near]]
         if distances[i] < atom_radius + near_atom_radius:
-            grid = np.delete(grid, dist(grid, coordinates[index_near], near_atom_radius), 0)
+            grid = np.delete(grid, find_overlapping_points(grid, coordinates[index_near], near_atom_radius), 0)
     return len(grid)/num_pts
+"""
