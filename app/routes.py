@@ -4,7 +4,8 @@ import zipfile
 from time import time, sleep
 from datetime import datetime
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
-from src.SQEqp import calculate_charges, load_parameters, precalculate_parameters_SQEqp, precalculate_parameters_SQEqps
+from src import SQEqp
+# from src import SQEqp  calculate_charges, load_parameters, precalculate_parameters_SQEqp, precalculate_parameters_SQEqps
 from src.molecule import Molecule
 from random import random
 
@@ -15,7 +16,7 @@ application.config['SECRET_KEY'] = str(random())
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
-parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps = load_parameters(root_dir)
+parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps = SQEqp.load_parameters(root_dir)
 
 currently_running = set()
 
@@ -171,10 +172,10 @@ class Calculation:
             self.logs.add_log("Assigning parameters...")
             s = time()
             self.molecule.precalc_params, \
-                self.molecule.precalc_bond_hardnesses = precalculate_parameters_SQEqp(self.molecule.ats_srepr,
-                                                                                      self.molecule.bonds_srepr,
-                                                                                      parameters_SQEqp,
-                                                                                      bond_hardnesses_SQEqp)
+                self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqp(self.molecule.ats_srepr,
+                                                                                            self.molecule.bonds_srepr,
+                                                                                            parameters_SQEqp,
+                                                                                            bond_hardnesses_SQEqp)
             self.logs.add_log(f"Parameters assigned. ({round(time() - s, 2)}s)")
 
         elif self.empirical_method == "SQEqps":
@@ -186,11 +187,11 @@ class Calculation:
             self.logs.add_log("Precalculate parameters...")
             s = time()
             self.molecule.precalc_params, \
-                self.molecule.precalc_bond_hardnesses = precalculate_parameters_SQEqps(self.molecule.ats_srepr,
-                                                                                       self.molecule.bonds_srepr,
-                                                                                       self.molecule.surfaces,
-                                                                                       parameters_SQEqps,
-                                                                                       bond_hardnesses_SQEqps)
+                self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqps(self.molecule.ats_srepr,
+                                                                                             self.molecule.bonds_srepr,
+                                                                                             self.molecule.surfaces,
+                                                                                             parameters_SQEqps,
+                                                                                             bond_hardnesses_SQEqps)
             self.logs.add_log(f"Parameters precalculated. ({round(time() - s, 2)}s)")
 
     def create_submolecules(self):
@@ -209,7 +210,7 @@ class Calculation:
         # all_charges = [chg for chgs in all_charges for chg in chgs]
         all_charges = []
         for substructure in self.molecule.substructures:
-            all_charges.extend(calculate_charges(substructure))
+            all_charges.extend(SQEqp.calculate_charges(substructure))
         all_charges -= (sum(all_charges) - self.molecule.total_chg) / len(all_charges)
         charges = all_charges
 
@@ -364,19 +365,28 @@ def get_charges():
                     mimetype='text/plain')
 
 
-@application.route("/get_sqeqp_charges")
-def get_sqeqp_charges():
+@application.route("/calculate_charges/<string:code>")
+def calculate_charges(code: str):
     # API
     empirical_method = "SQEqp"
-    code = request.args.get('code')
     ph = request.args.get('ph')
+    if ph is None:
+        ph = 7
+
     alphafold_prediction_version = request.args.get('alphafold_prediction_version')
-    if any([argument is None for argument in [code, ph, alphafold_prediction_version]]):
-        return Response("Url arguments <code>, <ph> and <alphafold_prediction_version> are required.",
-                        status=400)
+    if alphafold_prediction_version is None:
+        alphafold_prediction_version = 4
+
+    message_dict = {"UniProt code": code,
+                    "pH": ph,
+                    "AlphaFold2 prediction version": alphafold_prediction_version,
+                    "empirical method": empirical_method}
+
     if not valid_pH(ph):
-        return Response("Error! pH must be a float value from 0 to 14!",
-                        status=400)
+        message_dict.update({"status": "failed",
+                             "error message": "pH must be a float value from 0 to 14!"})
+        return jsonify(message_dict), 400
+    message_dict["pH"] = float(ph)
 
     ID = f"{code}_{ph}_{alphafold_prediction_version}"
     if ID in currently_running:
@@ -385,11 +395,13 @@ def get_sqeqp_charges():
     else:
         if not is_calculated(ID):
             if not is_valid_alphafold_request(code, alphafold_prediction_version):
-                return Response(f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
-                                f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
-                                f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
-                                f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.',
-                                status=400)
+                message_dict.update({"status": "failed",
+                                     "error message": f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
+                                                      f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
+                                                      f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
+                                                      f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.'})
+                return jsonify(message_dict), 400
+            message_dict["AlphaFold2 prediction version"] = int(alphafold_prediction_version)
             calculation = Calculation(ID,
                                       request.remote_addr,
                                       empirical_method)
@@ -397,28 +409,22 @@ def get_sqeqp_charges():
             calculation.protonate_structure()
             loaded, problematic_atom = calculation.load_molecule()
             if loaded is False:
-                return Response(f"There is an error with atom with index {problematic_atom}!"
-                                f" The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.",
-                                status=400)
+                message_dict.update({"status": "failed",
+                                     "error message": f"There is an error with atom with index {problematic_atom}!"
+                                                      f" The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.",})
+                return jsonify(message_dict), 501
             calculation.precalculate_parameters()
             calculation.create_submolecules()
             calculation.calculate_charges()
-    return jsonify({"UniProt code": code,
-                    "pH": ph,
-                    "AlphaFold2 prediction version": alphafold_prediction_version,
-                    "ID": ID,
-                    "empirical method": empirical_method})
+    message_dict.update({"status": "partial atomic charges successfully calculated",
+                         "ID": ID})
+    return jsonify(message_dict)
 
 
-
-@application.route('/download_file')
-def download_file():
-    ID = request.args.get("ID")
+@application.route('/download_file/<string:ID>/<string:format>')
+def download_file(ID: str,
+                  format: str):
     code = ID.split("_")[0]
-    format = request.args.get("format")
-    if any([argument is None for argument in [ID, format]]):
-        return Response("Url arguments <ID> and <format> are required. Supproted formats are txt, pdb, pqr and mmcif.",
-                        status=400)
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     if format == "txt":
         file = "charges.txt"
