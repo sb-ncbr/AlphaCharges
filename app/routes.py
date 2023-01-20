@@ -3,7 +3,7 @@ import requests
 import zipfile
 from time import time, sleep
 from datetime import datetime
-from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup
+from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
 from src.SQEqp import calculate_charges, load_parameters, precalculate_parameters_SQEqp, precalculate_parameters_SQEqps
 from src.molecule import Molecule
 from random import random
@@ -403,8 +403,13 @@ def get_sqeqp_charges():
             calculation.precalculate_parameters()
             calculation.create_submolecules()
             calculation.calculate_charges()
-    return Response(f"Calculation completed. ID of calculation is {ID}",
-                    status=200)
+    return jsonify({"UniProt code": code,
+                    "pH": ph,
+                    "AlphaFold2 prediction version": alphafold_prediction_version,
+                    "ID": ID,
+                    "empirical method": empirical_method})
+
+
 
 @application.route('/download_file')
 def download_file():
