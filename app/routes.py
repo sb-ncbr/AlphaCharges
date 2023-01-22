@@ -40,13 +40,26 @@ class Logs:
 
 
 def valid_pH(ph):
+    if ph is None:
+        return 7.0, True
     try:
         ph = float(ph)
     except ValueError:
-        return False
+        return ph, False
     if not 0 <= ph <= 14:
-        return False
-    return True
+        return ph, False
+    return ph, True
+
+def valid_prediction_version(version):
+    if version is None:
+        return 4, True
+    try:
+        version = int(version)
+    except ValueError:
+        return version, False
+    if version not in (1,2,3,4):
+        return version, False
+    return version, True
 
 def is_calculated(ID):
     # check whether the structure with the given setting has already been calculated
@@ -83,7 +96,8 @@ def main_site():
             ph = request.form['ph']
             alphafold_prediction_version = request.form['prediction_version']
 
-            if not valid_pH(ph):
+            ph, is_ph_valid = valid_pH(ph)
+            if not is_ph_valid:
                 flash("Error! pH must be a float value from 0 to 14!")
                 return render_template('index.html',
                                        code=code)
@@ -369,24 +383,29 @@ def get_charges():
 def calculate_charges(code: str):
     # API
     empirical_method = "SQEqp"
-    ph = request.args.get('ph')
-    if ph is None:
-        ph = 7
-
-    alphafold_prediction_version = request.args.get('alphafold_prediction_version')
-    if alphafold_prediction_version is None:
-        alphafold_prediction_version = 4
-
     message_dict = {"UniProt code": code,
-                    "pH": ph,
-                    "AlphaFold2 prediction version": alphafold_prediction_version,
                     "empirical method": empirical_method}
+    allowed_url_arguments = set(["ph", "alphafold_prediction_version"])
+    if not set(request.args.keys()).issubset(allowed_url_arguments):
+        message_dict.update({"status": "failed",
+                             "error message": "Only URL arguments 'ph' and 'alphafold_prediction_version' are allowed."})
+        return jsonify(message_dict), 400
 
-    if not valid_pH(ph):
+
+
+    ph, is_ph_valid = valid_pH(request.args.get('ph'))
+    message_dict["pH"] = ph
+    if not is_ph_valid:
         message_dict.update({"status": "failed",
                              "error message": "pH must be a float value from 0 to 14!"})
         return jsonify(message_dict), 400
-    message_dict["pH"] = float(ph)
+
+    alphafold_prediction_version, is_version_valid = valid_prediction_version(request.args.get('alphafold_prediction_version'))
+    message_dict["AlphaFold2 prediction version"] = alphafold_prediction_version
+    if not is_version_valid:
+        message_dict.update({"status": "failed",
+                             "error message": "AlphaFold2 prediction version can be integer from 1 to 4"})
+        return jsonify(message_dict), 400
 
     ID = f"{code}_{ph}_{alphafold_prediction_version}"
     if ID in currently_running:
@@ -401,7 +420,6 @@ def calculate_charges(code: str):
                                                       f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
                                                       f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.'})
                 return jsonify(message_dict), 400
-            message_dict["AlphaFold2 prediction version"] = int(alphafold_prediction_version)
             calculation = Calculation(ID,
                                       request.remote_addr,
                                       empirical_method)
@@ -424,6 +442,9 @@ def calculate_charges(code: str):
 @application.route('/download_file/<string:ID>/<string:format>')
 def download_file(ID: str,
                   format: str):
+    if not is_calculated(ID):
+        return Response(f"No results calculated for this ID.",
+                        status=400)
     code = ID.split("_")[0]
     data_dir = f"{root_dir}/calculated_structures/{ID}"
     if format == "txt":
