@@ -81,29 +81,19 @@
                     <b>Pepsin</b><br>
 
 
-                    <p style="text-align:center;"><img src="/static/pepsin.gif" alt="Pepsin" style="height: 200px"></p>
+<!--                    <p style="text-align:center;"><img src="/static/pepsin.gif" alt="Pepsin" style="height: 200px"></p>-->
 
-<!--                    <label id="ph_range_label" for="customRange1" class="form-label">pH: 1</label>-->
-<!--<input type="range" class="form-range" id="ph_range" min=1 max=8 value=1>-->
+                    <label id="ph_range_label" for="customRange1" class="form-label">pH: 1</label>
+<input type="range" class="form-range" id="ph_range" min=1 max=8 value=1>
 
-<!--<img id="cat0" class="cat_image" src="/static/pepsin_ph1.png" style="height: 200px">-->
-<!--<img id="cat1" class="cat_image" src="/static/pepsin_ph2.png" style="height: 200px" hidden>-->
-<!--<img id="cat2" class="cat_image" src="/static/pepsin_ph3.png" style="height: 200px" hidden>-->
-<!--<img id="cat3" class="cat_image" src="/static/pepsin_ph4.png" style="height: 200px" hidden>-->
-<!--<img id="cat4" class="cat_image" src="/static/pepsin_ph5.png" style="height: 200px" hidden>-->
-<!--<img id="cat5" class="cat_image" src="/static/pepsin_ph6.png" style="height: 200px" hidden>-->
-<!--<img id="cat6" class="cat_image" src="/static/pepsin_ph7.png" style="height: 200px" hidden>-->
-<!--<img id="cat7" class="cat_image" src="/static/pepsin_ph8.png" style="height: 200px" hidden>-->
-
-<!--                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>-->
-
-<!--<label id="ph_range_label" for="customRange1" class="form-label">pH: 2.5</label>-->
-<!--<input type="range" class="form-range" id="ph_range" min=0 max=3 value=0>-->
-
-<!--<img id="cat0" class="cat_image" src="https://metro.co.uk/wp-content/uploads/2014/12/ad_153647674-e1417723554488.jpg?quality=90&strip=all&zoom=1&resize=480%2C480">-->
-<!--<img id="cat1" class="cat_image" src="https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/grumpy-cat-died-1558090566.jpg?crop=0.677xw:1.00xh;0.269xw,0&resize=480:*" hidden>-->
-<!--<img id="cat2" class="cat_image" src="https://wompimages.azureedge.net/fetchimage?url=https://i.chzbgr.com/full/9428255744/h9AAD7776/cat" hidden>-->
-<!--<img id="cat3" class="cat_image" src="https://metro.co.uk/wp-content/uploads/2019/05/SEI_67888788.jpg?quality=90&strip=all&zoom=1&resize=480%2C480" hidden>-->
+<img id="cat1" class="cat_image" src="/static/pepsin_ph1.png" style="height: 200px">
+<img id="cat2" class="cat_image" src="/static/pepsin_ph2.png" style="height: 200px" hidden>
+<img id="cat3" class="cat_image" src="/static/pepsin_ph3.png" style="height: 200px" hidden>
+<img id="cat4" class="cat_image" src="/static/pepsin_ph4.png" style="height: 200px" hidden>
+<img id="cat5" class="cat_image" src="/static/pepsin_ph5.png" style="height: 200px" hidden>
+<img id="cat6" class="cat_image" src="/static/pepsin_ph6.png" style="height: 200px" hidden>
+<img id="cat7" class="cat_image" src="/static/pepsin_ph7.png" style="height: 200px" hidden>
+<img id="cat8" class="cat_image" src="/static/pepsin_ph8.png" style="height: 200px" hidden>
 
                     <p><small>
                     Pepsin is the enzyme that is majorly involved in proteins digestion in the stomach. It is secreted as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin is the most effective at a pH of approximately 1.5 to 2 and it became inactive, when the pH rises above 6 (see more details <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank" rel="noreferrer">here</a>). Pepsin remains structurally stable until at least a pH of 8. Differences in a charge distribution between its active form (pH 2) and inactive form (pH 8) can be seen in this use case. The alkaline environment causes an increase in negative charges which contributes to the structural instability of the pepsin, causing the shift to an inactive form of the protein (more details are available <a href="https://academic.oup.com/peds/article/14/9/669/1551528?login=false" target="_blank" rel="noreferrer">here</a> and <a href="https://www.sciencedirect.com/science/article/abs/pii/S0141022921001290?via%3Dihub" target="_blank" rel="noreferrer">here</a>).
@@ -203,4 +193,17 @@
     <script src="{{ url_for('static', filename='jquery/jquery-3.6.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
+<script>
+const phs = [0,1,2,3,4,5,6,7,8];
+
+let $range = $('#ph_range');
+let $range_label = $('#ph_range_label');
+$range.on('change', function(){
+	$range_label.html(`pH: ${phs[$range.val()]}`)
+  $('.cat_image').each(function(i, obj){
+  	 $(this).attr('hidden', true);
+  });
+  $(`#cat${$range.val()}`).attr('hidden', false);
+});
+</script>
 {% endblock scripts %}

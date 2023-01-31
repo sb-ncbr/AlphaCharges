@@ -6,7 +6,9 @@ from numba import jit
 from numba.typed import List
 from rdkit import Chem
 from sklearn.neighbors import KDTree as kdtreen
-
+from .amino_acids_radii import amk_radius
+from .mean_qm_charges import mean_qm_charges
+from .amino_acids_atomic_types import real_ats_types
 
 class Substructure:
     def __init__(self,
@@ -16,12 +18,12 @@ class Substructure:
         #self.surfaces = np.concatenate([res.surfaces for res in residues])
         self.coordinates = np.concatenate([res.coordinates for res in residues], axis=0)
         self.precalc_params = np.concatenate([res.precalc_params for res in residues], axis=0)
-        self.total_chg = sum([chg for res in residues for chg in res.mean_qm_chgs])
+        self.total_chg = sum(chg for res in residues for chg in res.mean_qm_chgs)
         precalc_bond_hardnesses = [hardness for res in residues for hardness in res.precalc_bond_hardnesses]
         bonds = [bond for res in residues for bond in res.bonds]
 
         # add bonds between residues (peptide and disulfide bonds)
-        residues_numbers = set([res.number for res in residues])
+        residues_numbers = set(res.number for res in residues)
         for res in residues:
             for connected_res, connected_by, bond_hardness in zip(res.connected_with,
                                                                   res.connected_bonds,
@@ -70,8 +72,8 @@ class Molecule:
                  pqr_file: str):
 
         # load charges from propka, sum of charges are used as total charge of molecule
-        self.total_chg = round(sum([float(line.split()[8]) for line in
-                               open(pqr_file, "r").readlines()[:-2]]))
+        self.total_chg = round(sum(float(line.split()[8]) for line in
+                               open(pqr_file, "r").readlines()[:-2]))
 
         # load molecule by rdkit
         Chem.WrapLogs()
@@ -113,50 +115,10 @@ class Molecule:
                        for ba1, ba2, bond_type in bonds]
 
         # control, whether molecule consist of standart aminoacids
-        real_ats_types = {'C/CCC', 'C/CCCH', 'C/CCH', 'C/CCHH', 'C/CCHN', 'C/CCHO', 'C/CCN', 'C/CCO', 'C/CHHH',
-                          'C/CHHN', 'C/CHHO', 'C/CHHS',
-                          'C/CHN', 'C/CNO', 'C/COO', 'C/HHHS', 'C/HNN', 'C/NNN', 'H/C', 'H/N', 'H/O', 'H/S', 'N/CC',
-                          'N/CCC', 'N/CCH',
-                          'N/CCHH', 'N/CHH', 'N/CHHH', 'O/C', 'O/CH', 'S/CC', 'S/CH', 'S/CS', 'S/C'}
         for i, atba in enumerate(ats_sreprba):
             if atba not in real_ats_types:
                 raise ValueError(f"{i+1}")
 
-        # mean QM charges are used like a estimation of total charge of submolecule
-        mean_qm_charges = {'C/CCC': -0.060579386,
-         'C/CCCH': -0.21524236,
-         'C/CCH': -0.22295399,
-         'C/CCHH': -0.43542072,
-         'C/CCHN': -0.11663078,
-         'C/CCHO': 0.12791422,
-         'C/CCN': 0.12563628,
-         'C/CCO': 0.33326367,
-         'C/CHHH': -0.63340616,
-         'C/CHHN': -0.2587134,
-         'C/CHHO': -0.03784664,
-         'C/CHHS': -0.5484944,
-         'C/CHN': -0.045613743,
-         'C/CNO': 0.69618624,
-         'C/COO': 0.7912705,
-         'C/HHHS': -0.7433207,
-         'C/HNN': 0.18661118,
-         'C/NNN': 0.67275774,
-         'H/C': 0.22627519,
-         'H/N': 0.43427196,
-         'H/O': 0.47808334,
-         'H/S': 0.034808055,
-         'N/CC': -0.5559488,
-         'N/CCC': -0.46503165,
-         'N/CCH': -0.64744794,
-         'N/CCHH': -0.5750265,
-         'N/CHH': -0.8230933,
-         'N/CHHH': -0.7491838,
-         'O/C': -0.67871934,
-         'O/CH': -0.750477,
-         'S/C': -0.5285528,
-         'S/CC': 0.18457225,
-         'S/CH': 0.01818913,
-         'S/CS': 0.09353083}
         self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
 
         # convert to numba data structure
@@ -171,15 +133,15 @@ class Molecule:
         return [f"{symbol}/{''.join(sorted(bonded_ats))}"
                 for symbol, bonded_ats in zip(self.symbols, bonded_ats)]
 
-    """
-    # for sqeqps
-    def calculate_surfaces(self, cpu) -> np.array:
-        num_pts = 1000
-        kdtree = kdtreen(self.coordinates, leaf_size=40)
-        with Pool(cpu) as p:
-            surfaces = p.starmap(f2, [[index, at, self.coordinates, self.symbols, kdtree, num_pts] for index, at in enumerate(self.symbols)])
-        self.surfaces = np.array(surfaces)
-    """
+
+    # # for sqeqps
+    # def calculate_surfaces(self, cpu) -> np.array:
+    #     num_pts = 1000
+    #     kdtree = kdtreen(self.coordinates, leaf_size=40)
+    #     with Pool(cpu) as p:
+    #         surfaces = p.starmap(f2, [[index, at, self.coordinates, self.symbols, kdtree, num_pts] for index, at in enumerate(self.symbols)])
+    #     self.surfaces = np.array(surfaces)
+
 
     def create_submolecules(self):
         # create residues
@@ -239,26 +201,6 @@ class Molecule:
         # create submolecules
         residues_averages = [res.coordinates_mean for res in self.residues]
         res_kdtree = kdtreen(residues_averages, leaf_size=50)
-        amk_radius = {'ALA': 2.48013472197102,
-                      'ARG': 4.861893836930157,
-                      'ASN': 3.223781749594369,
-                      'ASP': 2.803611164950305,
-                      'CYS': 2.5439900881094437,
-                      'GLN': 3.845641228833085,
-                      'GLU': 3.396388805414707,
-                      'GLY': 2.145581026362788,
-                      'HIS': 3.837607343643752,
-                      'ILE': 3.4050022674834866,
-                      'LEU': 3.5357084005904222,
-                      'LYS': 4.452109446576905,
-                      'MET': 4.18214798399969,
-                      'PHE': 4.117010781374703,
-                      'PRO': 2.8418414713774762,
-                      'SER': 2.499710830364658,
-                      'THR': 2.74875502488962,
-                      'TRP': 4.683613811874498,
-                      'TYR': 4.514843482397014,
-                      'VAL': 2.951599144669813}
         self.substructures = []
         for res in self.residues:
             residues = [res]
@@ -271,42 +213,41 @@ class Molecule:
             self.substructures.append(Substructure(residues))
 
 
-"""
-# for SQEqps
-@jit(nopython=True, cache=True)
-def find_overlapping_points(grid, c, d):
-    indices_to_remove = []
-    e, f, g = c
-    for gi, (a, b, c) in enumerate(grid):
-        if np.sqrt((a - e) ** 2 + (b - f) ** 2 + (c - g) ** 2) < d:
-            indices_to_remove.append(gi)
-    return indices_to_remove
 
-
-@jit(nopython=True, cache=True)
-def fibonacci_sphere(xc, yc, zc, radius, num_pts):
-    indices = np.arange(0, num_pts, dtype=np.float32) + 0.5
-    phi = np.arccos(1 - 2 * indices / num_pts)
-    theta = np.pi * (1 + 5 ** 0.5) * indices
-    x, y, z = np.cos(theta) * np.sin(phi) * radius, np.sin(theta) * np.sin(phi) * radius, np.cos(phi) * radius
-    return np.column_stack((x + xc, y + yc, z + zc))
-
-
-
-def f2(index, at, coordinates, symbols, kdtree, num_pts):
-    vdw = {"H": 1.17183574,
-           "C": 1.74471729,
-           "N": 1.59013069,
-           "O": 1.46105651,
-           "S": 1.84999765}
-    grid = fibonacci_sphere(*coordinates[index], vdw[at[0]], num_pts)
-    distances, indices = kdtree.query([coordinates[index]], k=30)
-    distances = distances[0][1:]
-    indices = indices[0][1:]
-    atom_radius = vdw[symbols[index]]
-    for i, index_near in enumerate(indices):
-        near_atom_radius = vdw[symbols[index_near]]
-        if distances[i] < atom_radius + near_atom_radius:
-            grid = np.delete(grid, find_overlapping_points(grid, coordinates[index_near], near_atom_radius), 0)
-    return len(grid)/num_pts
-"""
+# # for SQEqps
+# @jit(nopython=True, cache=True)
+# def find_overlapping_points(grid, c, d):
+#     indices_to_remove = []
+#     e, f, g = c
+#     for gi, (a, b, c) in enumerate(grid):
+#         if np.sqrt((a - e) ** 2 + (b - f) ** 2 + (c - g) ** 2) < d:
+#             indices_to_remove.append(gi)
+#     return indices_to_remove
+#
+#
+# @jit(nopython=True, cache=True)
+# def fibonacci_sphere(xc, yc, zc, radius, num_pts):
+#     indices = np.arange(0, num_pts, dtype=np.float32) + 0.5
+#     phi = np.arccos(1 - 2 * indices / num_pts)
+#     theta = np.pi * (1 + 5 ** 0.5) * indices
+#     x, y, z = np.cos(theta) * np.sin(phi) * radius, np.sin(theta) * np.sin(phi) * radius, np.cos(phi) * radius
+#     return np.column_stack((x + xc, y + yc, z + zc))
+#
+#
+#
+# def f2(index, at, coordinates, symbols, kdtree, num_pts):
+#     vdw = {"H": 1.17183574,
+#            "C": 1.74471729,
+#            "N": 1.59013069,
+#            "O": 1.46105651,
+#            "S": 1.84999765}
+#     grid = fibonacci_sphere(*coordinates[index], vdw[at[0]], num_pts)
+#     distances, indices = kdtree.query([coordinates[index]], k=30)
+#     distances = distances[0][1:]
+#     indices = indices[0][1:]
+#     atom_radius = vdw[symbols[index]]
+#     for i, index_near in enumerate(indices):
+#         near_atom_radius = vdw[symbols[index_near]]
+#         if distances[i] < atom_radius + near_atom_radius:
+#             grid = np.delete(grid, find_overlapping_points(grid, coordinates[index_near], near_atom_radius), 0)
+#     return len(grid)/num_pts
