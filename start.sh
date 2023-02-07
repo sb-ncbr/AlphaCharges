@@ -1,12 +1,20 @@
-sudo apt update -y && sudo apt upgrade -y
-sudo apt install git
+#!/bin/bash
+
+# update system and install deps
+sudo apt update -y && sudo apt upgrade -y && \
+    apt --y install python3-pip python3-venv apache2 libapache2-mod-wsgi-py3 git
+
+# clone repo
 cd /opt
-sudo git clone -b stable --depth 1 https://github.com/dargen3/AlphaCharges
-sudo apt-get --yes install python3-pip python3-venv apache2 libapache2-mod-wsgi-py3 gemmi
+sudo git clone -b stable --depth 1 https://github.com/dargen3/AlphaCharges AlphaCharges
+
+# install python deps
 sudo python3 -m venv venv
 source venv/bin/activate
 sudo chown -R ubuntu:ubuntu /opt
-pip install flask requests scipy numba numpy pdb2pqr scikit-learn rdkit==2022.03.5
+pip install -r AlphaCharges/requirements.txt
+
+# setup web server
 sudo rm -f /etc/apache2/sites-available/*
 sudo cp AlphaCharges/AlphaCharges.conf /etc/apache2/sites-available/
 sudo chown -R www-data:www-data /opt
