@@ -190,20 +190,17 @@
 
 {% endblock body %}
 {% block scripts %}
-    <script src="{{ url_for('static', filename='jquery/jquery-3.6.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
 <script>
-const phs = [0,1,2,3,4,5,6,7,8];
-
-let $range = $('#ph_range');
-let $range_label = $('#ph_range_label');
-$range.on('change', function(){
-	$range_label.html(`pH: ${phs[$range.val()]}`)
-  $('.cat_image').each(function(i, obj){
-  	 $(this).attr('hidden', true);
-  });
-  $(`#cat${$range.val()}`).attr('hidden', false);
-});
+const phs = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    const range = document.getElementById('ph_range');
+    const range_label = document.getElementById('ph_range_label');
+    range.oninput = function () {
+        range_label.innerHTML = `pH: ${phs[range.value]}`;
+        const cat_images = document.getElementsByClassName('cat_image');
+        for (let i = 0; i < cat_images.length; ++i) {
+            cat_images[i].setAttribute('hidden', true);
+        }
+        document.getElementById(`cat${range.value}`).removeAttribute('hidden');
+    }
 </script>
 {% endblock scripts %}
