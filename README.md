@@ -17,9 +17,9 @@ $ pip install -r requirements.txt
 **BUG**: Before running the project you will need to copy over this file:
 
 ```bash
-$ sudo chown -R $USER:$USER /opt
-$ mkdir -p /opt/venv/bin
-$ cp ./venv/bin/pdb2pqr30 /opt/venv/bin/pdb2pqr30
+$ sudo mkdir -p /opt/venv/bin
+$ sudo cp ./venv/bin/pdb2pqr30 /opt/venv/bin/pdb2pqr30
+$ sudo chown -R $USER:$USER /opt/venv/bin/pdb2pqr30
 ```
 
 Run the project by running the following command inside the virtual environment:
