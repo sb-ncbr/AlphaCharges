@@ -1,6 +1,7 @@
 import os
 import requests
 import zipfile
+import gemmi
 from time import time, sleep
 from datetime import datetime
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
@@ -225,11 +226,19 @@ class Calculation:
         all_charges -= (sum(all_charges) - self.molecule.total_chg) / len(all_charges)
         charges = all_charges
 
-        # writing charges to txt
+        # write charges to files
+        self.write_txt(charges)
+        self.write_pqr(charges)
+        self.write_mmcif(charges)
+
+        self.logs.add_log(f'Partial atomic charges calculated. ({round(time() - s, 2)}s)')
+        currently_running.remove(self.ID)
+
+    def write_txt(self, charges):
         with open(f'{self.data_dir}/charges.txt', 'w') as chg_file:
             chg_file.write(f'{self.code}\n' + ' '.join([str(round(charge, 4)) for charge in charges]) + ' \n')
 
-        # writing charges to pqr
+    def write_pqr(self, charges):
         pqr_file_lines = open(self.pqr_file).readlines()
         c = 0
         new_lines = []
@@ -242,22 +251,64 @@ class Calculation:
         with open(self.pqr_file, 'w') as pqr_file:
             pqr_file.write(''.join(new_lines))
 
-        # writing charges to mmcif
-        os.system(f'gemmi convert {self.pdb_file_with_hydrogens} {self.data_dir}/{self.code}_added_H.cif')
-        # mmcif_lines_chgs = []
-        # c = 0
-        # for line in open(f'{data_dir}/{code}_added_H.cif', 'r').readlines():
-        #     sl = line.split()
-        #     if len(sl) > 2 and sl[0].isdigit() and sl[1] in 'HCNOS':
-        #         sl[-4] = str(round(charges[c], 4))
-        #         c += 1
-        #         mmcif_lines_chgs.append(' '.join(sl) + '\n')
-        #     else:
-        #         mmcif_lines_chgs.append(line)
-        # with open(f'{data_dir}/{code}_added_H.cif', 'w') as mmcif_file:
-        #     mmcif_file.write(''.join(mmcif_lines_chgs))
-        self.logs.add_log(f'Partial atomic charges calculated. ({round(time() - s, 2)}s)')
-        currently_running.remove(self.ID)
+    def write_mmcif(self, charges):
+        input_file = self.pdb_file_with_hydrogens
+        filename, _ = os.path.splitext(input_file)
+        output_file = f"{filename}.cif"
+
+        structure = gemmi.read_pdb(input_file)
+        structure.setup_entities()
+        structure.assign_label_seq_id()
+        block = structure.make_mmcif_block()
+
+        # remove pesky _chem_comp category >:(
+        block.find_mmcif_category('_chem_comp.').erase()
+
+        create_loop_charges_meta(block)
+        create_loop_charges_data(block, charges)
+
+        block.write_file(output_file)
+
+
+def create_loop_charges_meta(block):
+    partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta."
+    partial_atomic_charges_meta_attributes = [
+        "id",
+        "type",
+        "method",
+    ]
+
+    metadata_loop = block.init_loop(
+        partial_atomic_charges_meta_prefix,
+        partial_atomic_charges_meta_attributes
+    )
+
+    metadata_loop.add_row([
+        '1',
+        'empirical',
+        'SQEqp',
+    ])
+
+
+def create_loop_charges_data(block, charges):
+    partial_atomic_charges_prefix = "_partial_atomic_charges."
+    partial_atomic_charges_attributes = [
+        "type_id",
+        "atom_id",
+        "charge",
+    ]
+
+    charges_loop = block.init_loop(
+        partial_atomic_charges_prefix,
+        partial_atomic_charges_attributes
+    )
+
+    for atomId, charge in enumerate(charges):
+        charges_loop.add_row([
+            "1",
+            f"{atomId + 1}",
+            f"{charge: .3f}",
+        ])
 
 
 @application.route('/calculation', methods=['POST'])
@@ -359,7 +410,7 @@ def download_files():
 @application.route('/structure')
 def get_structure():
     ID = request.args.get('ID')
-    return Response(open(f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.pdb', 'r').read(),
+    return Response(open(f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.cif', 'r').read(),
                     mimetype='text/plain')
 
 
