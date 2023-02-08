@@ -105,7 +105,7 @@ def main_site():
             # check whether the structure is currently calculated
             if ID in currently_running:
                 flash(Markup(f'The partial atomic charges for your input are just calculated. '
-                             f'For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" '
+                             f'For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" class="alert-link"'
                              f'target="_blank" rel="noreferrer">https://alphacharges.ncbr.muni.cz/results?ID={ID}</a>'
                              f' after a while.'))
                 return render_template('index.html')
