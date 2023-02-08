@@ -289,8 +289,8 @@ def create_loop_charges_meta(block):
 
     metadata_loop.add_row([
         '1',
-        'empirical',
-        'SQEqp',
+        "'empirical'",
+        "'SQE+qp/Schindler 2021 (PUB_pept)'",
     ])
 
 
