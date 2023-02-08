@@ -96,8 +96,8 @@ def main_site():
 
             ph, is_ph_valid = valid_pH(ph)
             if not is_ph_valid:
-                message = 'Error! pH must be a float value from 0 to 14!'
-                flash(message, 'danger')
+                message = 'pH must be a float value from 0 to 14!'
+                flash(message, 'warning')
                 return render_template('index.html',
                                        code=code)
 
@@ -117,11 +117,11 @@ def main_site():
                                         ID=ID))
 
             if not is_valid_alphafold_request(code, alphafold_prediction_version):
-                message = (f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
+                message = Markup(f'The structure with UniProt code <strong>{code}</strong> in prediction version <strong>{alphafold_prediction_version}</strong> '
                       f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
                       f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
                       f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
-                flash(message, 'danger')
+                flash(message, 'warning')
                 return render_template('index.html')
 
             # start calculation
@@ -357,14 +357,14 @@ def results():
     ID = request.args.get('ID')
 
     if ID is None:
-        message = 'No ID parameter was entered in your request! The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.'
+        message = Markup('No ID parameter was entered in your request! The ID should be of the form <strong>&ltUniProt code&gt_&ltph&gt_&ltAlphaFold2 prediction version&gt</strong>.')
         flash(message, 'danger')
         return redirect(url_for('main_site'))
 
     try:
         code, ph, alphafold_prediction_version = ID.split('_')
     except:
-        message = f'The ID was entered in the wrong format. The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.'
+        message = Markup('The ID was entered in the wrong format. The ID should be of the form <strong>&ltUniProt code&gt_&ltph&gt_&ltAlphaFold2 prediction version&gt</strong>.')
         flash(message, 'danger')
         return redirect(url_for('main_site'))
 
@@ -374,7 +374,7 @@ def results():
         absolute_charges = [abs(float(x)) for x in open(f'{data_dir}/charges.txt', 'r').readlines()[1].split()]
     except FileNotFoundError:
         os.system(f'rm -r {data_dir}')
-        message = f'There are no results for structure with UniProt {code} in AlphaFold2 prediction version {alphafold_prediction_version} and pH {ph}.'
+        message = Markup(f'There are no results for structure with UniProt <strong>{code}</strong> in AlphaFold2 prediction version <strong>{alphafold_prediction_version}</strong> and pH <strong>{ph}</strong>.')
         flash(message, 'danger')
         return redirect(url_for('main_site'))
 
