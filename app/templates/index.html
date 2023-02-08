@@ -190,6 +190,8 @@
 
 {% endblock body %}
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
 <script>
 const phs = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     const range = document.getElementById('ph_range');
