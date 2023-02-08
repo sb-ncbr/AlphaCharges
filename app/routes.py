@@ -96,7 +96,8 @@ def main_site():
 
             ph, is_ph_valid = valid_pH(ph)
             if not is_ph_valid:
-                flash('Error! pH must be a float value from 0 to 14!')
+                message = 'Error! pH must be a float value from 0 to 14!'
+                flash(message, 'danger')
                 return render_template('index.html',
                                        code=code)
 
@@ -104,10 +105,11 @@ def main_site():
 
             # check whether the structure is currently calculated
             if ID in currently_running:
-                flash(Markup(f'The partial atomic charges for your input are just calculated. '
+                message = Markup(f'The partial atomic charges for your input are just calculated. '
                              f'For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" class="alert-link"'
                              f'target="_blank" rel="noreferrer">https://alphacharges.ncbr.muni.cz/results?ID={ID}</a>'
-                             f' after a while.'))
+                             f' after a while.')
+                flash(message, 'info')
                 return render_template('index.html')
 
             if is_calculated(ID):
@@ -115,10 +117,11 @@ def main_site():
                                         ID=ID))
 
             if not is_valid_alphafold_request(code, alphafold_prediction_version):
-                flash(f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
+                message = (f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
                       f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
                       f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
                       f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
+                flash(message, 'danger')
                 return render_template('index.html')
 
             # start calculation
@@ -354,13 +357,15 @@ def results():
     ID = request.args.get('ID')
 
     if ID is None:
-        flash(f'No ID parameter was entered in your request! The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.')
+        message = 'No ID parameter was entered in your request! The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.'
+        flash(message, 'danger')
         return redirect(url_for('main_site'))
 
     try:
         code, ph, alphafold_prediction_version = ID.split('_')
     except:
-        flash(f'The ID was entered in the wrong format. The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.')
+        message = f'The ID was entered in the wrong format. The ID should be of the form <UniProt code>_<ph>_<AlphaFold2 prediction version>.'
+        flash(message, 'danger')
         return redirect(url_for('main_site'))
 
     data_dir = f'{root_dir}/calculated_structures/{ID}'
@@ -369,7 +374,8 @@ def results():
         absolute_charges = [abs(float(x)) for x in open(f'{data_dir}/charges.txt', 'r').readlines()[1].split()]
     except FileNotFoundError:
         os.system(f'rm -r {data_dir}')
-        flash(f'There are no results for structure with UnitProt {code} in AlphaFold2 prediction version {alphafold_prediction_version} and pH {ph}.')
+        message = f'There are no results for structure with UniProt {code} in AlphaFold2 prediction version {alphafold_prediction_version} and pH {ph}.'
+        flash(message, 'danger')
         return redirect(url_for('main_site'))
 
     chg_range = round(max(absolute_charges), 4)
