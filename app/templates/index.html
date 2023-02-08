@@ -8,7 +8,7 @@
                 <div class="col">
                     <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges</h1>
 
-                    <span class="font-weight-bold">AlphaCharges</span> (<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span>) is a web application for the calculation of partial atomic charges on protein structures predicted by the <a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank" rel="noreferrer">AlphaFold2 algorithm</a> and deposited in the <a href="https://academic.oup.com/nar/article/50/D1/D439/6430488" target="_blank" rel="noreferrer">AlphaFoldDB</a> database. The charges are computed by the <a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w" target="_blank" rel="noreferrer">SQE+qp empirical method</a>, which quality is comparable to quantum mechanical charge calculation approaches (specifically, it is parameterized using B3LYP/6-31G*/NPA quantum mechanical charges). Before computation of the charges, <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> protonates the input protein structures by <a href="https://pubs.acs.org/doi/full/10.1021/ct100578z" target="_blank" rel="noreferrer">PROPKA3</a>. The details about the methodology and usage are described in the <a href="/static/manual.pdf" target="_blank" rel="noreferrer">manual</a>. This website is free and open to all users and there is no login requirement.
+                    <span class="font-weight-bold">AlphaCharges</span> (<span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span>) is a web application for the calculation of partial atomic charges on protein structures predicted by the <a href="https://www.nature.com/articles/s41586-021-03819-2" target="_blank" rel="noreferrer">AlphaFold2 algorithm</a> and deposited in the <a href="https://academic.oup.com/nar/article/50/D1/D439/6430488" target="_blank" rel="noreferrer">AlphaFoldDB</a> database. The charges are computed by the <a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w" target="_blank" rel="noreferrer">SQE+qp empirical method</a>, which quality is comparable to quantum mechanical charge calculation approaches (specifically, it is parameterized using B3LYP/6-31G*/NPA quantum mechanical charges). Before computation of the charges, <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> protonates the input protein structures by <a href="https://pubs.acs.org/doi/full/10.1021/ct100578z" target="_blank" rel="noreferrer">PROPKA3</a>. The details about the methodology and usage are described in the <a href="{{ url_for('static', filename='assets/manual.pdf') }}" target="_blank" rel="noreferrer">manual</a>. This website is free and open to all users and there is no login requirement.
 
 
                 </div>
@@ -61,7 +61,7 @@
             <div class="row">
                 <div class="col-lg-4">
                     <b>P-glycoprotein</b><br>
-                    <p style="text-align:center;"><img src="/static/p_glycoprotein.png" alt="P-glycoprotein"
+                    <p style="text-align:center;"><img src="{{ url_for('static', filename='assets/p_glycoprotein.png') }}" alt="P-glycoprotein"
                                                        style="height: 200px"></p>
                     <p><small>
                         P-glycoprotein is part of the ABC transporter proteins that decrease drug accumulation in cancer cells (see details <a href="https://www.sciencedirect.com/science/article/pii/S0041008X0400482X?via%3Dihub" target="_blank" rel="noreferrer">here</a>). It is a 170-kDa protein which consists in a nucleotide-binding domain and a transmembrane domain (details are <a href="https://www.pnas.org/doi/full/10.1073/pnas.1309275110" target="_blank" rel="noreferrer">here</a>). Partial atomic charges calculated by <span class="font-weight-bold"><span style="color:tomato">α</span><span style="color:#1E90FF">Charges</span></span> demonstrate the differences in charge distribution between transmembrane parts and extracellular/intracellular one.
@@ -86,14 +86,14 @@
                     <label id="ph_range_label" for="customRange1" class="form-label">pH: 1</label>
 <input type="range" class="form-range" id="ph_range" min=1 max=8 value=1>
 
-<img id="cat1" class="cat_image" src="/static/pepsin_ph1.png" style="height: 200px">
-<img id="cat2" class="cat_image" src="/static/pepsin_ph2.png" style="height: 200px" hidden>
-<img id="cat3" class="cat_image" src="/static/pepsin_ph3.png" style="height: 200px" hidden>
-<img id="cat4" class="cat_image" src="/static/pepsin_ph4.png" style="height: 200px" hidden>
-<img id="cat5" class="cat_image" src="/static/pepsin_ph5.png" style="height: 200px" hidden>
-<img id="cat6" class="cat_image" src="/static/pepsin_ph6.png" style="height: 200px" hidden>
-<img id="cat7" class="cat_image" src="/static/pepsin_ph7.png" style="height: 200px" hidden>
-<img id="cat8" class="cat_image" src="/static/pepsin_ph8.png" style="height: 200px" hidden>
+<img id="cat1" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph1.png') }}" style="height: 200px">
+<img id="cat2" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph2.png') }}" style="height: 200px" hidden>
+<img id="cat3" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph3.png') }}" style="height: 200px" hidden>
+<img id="cat4" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph4.png') }}" style="height: 200px" hidden>
+<img id="cat5" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph5.png') }}" style="height: 200px" hidden>
+<img id="cat6" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph6.png') }}" style="height: 200px" hidden>
+<img id="cat7" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph7.png') }}" style="height: 200px" hidden>
+<img id="cat8" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph8.png') }}" style="height: 200px" hidden>
 
                     <p><small>
                     Pepsin is the enzyme that is majorly involved in proteins digestion in the stomach. It is secreted as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin is the most effective at a pH of approximately 1.5 to 2 and it became inactive, when the pH rises above 6 (see more details <a href="https://www.ncbi.nlm.nih.gov/books/NBK537005/" target="_blank" rel="noreferrer">here</a>). Pepsin remains structurally stable until at least a pH of 8. Differences in a charge distribution between its active form (pH 2) and inactive form (pH 8) can be seen in this use case. The alkaline environment causes an increase in negative charges which contributes to the structural instability of the pepsin, causing the shift to an inactive form of the protein (more details are available <a href="https://academic.oup.com/peds/article/14/9/669/1551528?login=false" target="_blank" rel="noreferrer">here</a> and <a href="https://www.sciencedirect.com/science/article/abs/pii/S0141022921001290?via%3Dihub" target="_blank" rel="noreferrer">here</a>).
@@ -117,7 +117,7 @@
                     </div>
                 <div class="col-lg-4">
                     <b>PIN proteins</b><br>
-                    <p style="text-align:center;"><img src="/static/pin.png"
+                    <p style="text-align:center;"><img src="{{ url_for('static', filename='assets/pin.png') }}"
                                                        alt="pin" style="height: 200px"></p>
                     <p><small>
                         The PIN family proteins control plant growth by regulating auxin export from the cytosol to the extracellular space. Eight types of PIN proteins are known (PIN1-PIN8) and this year, structures of three of them were discovered and published in Nature (i.e., articles about <a href="https://www.nature.com/articles/s41586-022-05143-9" target="_blank" rel="noreferrer">PIN1</a>, <a href="https://www.nature.com/articles/s41586-022-05142-w" target="_blank" rel="noreferrer">PIN3</a>, <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank" rel="noreferrer">PIN8</a>). Partial atomic charges play an important role in PINs functionality. The PIN protein part inside the cytosol (containing the cytosolic loop) is charged more than the part outside the cytosol. Questionable is a charge distribution of PIN5, which structure differs from other PINs (see this <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank" rel="noreferrer">article</a>) and was not experimentally determined yet. In the use case, you can compare charge distribution of AlphaFold2 predicted PINs from <em>A. thaliana</em>.
