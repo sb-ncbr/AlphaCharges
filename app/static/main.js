@@ -25,9 +25,10 @@ async function load(structure_url, id) {
     if (id === first_example) {
         document.getElementById("view_surface").setAttribute("checked", "true");
         await molstar.type.surface();
-    }
-    else {
-        document.getElementById("colors_relative").setAttribute("checked", "true");
+    } else {
+        document
+            .getElementById("colors_relative")
+            .setAttribute("checked", "true");
         await molstar.type.default();
     }
 
@@ -85,7 +86,6 @@ async function updateRange() {
     const input = document.getElementById("max_value");
     if (!input) return;
     const value = Number(input.value);
-    console.log(value);
     if (isNaN(value)) return;
     await molstar.color.absolute(value);
 }
