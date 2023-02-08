@@ -308,7 +308,7 @@ def create_loop_charges_data(block, charges):
         charges_loop.add_row([
             "1",
             f"{atomId + 1}",
-            f"{charge: .3f}",
+            f"{charge: .4f}",
         ])
 
 
