@@ -3,9 +3,8 @@
 {% block title %} αCharges – Calculation results {% endblock title %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='litemol/static/css/main.css') }}">
-    <link rel="preload" href="{{ url_for('static', filename='litemol/static/media/fontello.woff2') }}?version=r6.6"
-          as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.4/dist/style.css">
+
 {% endblock styles %}
 
 {% block body %}
@@ -77,14 +76,10 @@
                                 <label class="form-check-label" for="colors_absolute">Charges (absolute)</label>
                             </div>
                             <div class="form-group form-inline mb-0">
-                                <label class="col-sm-6 col-lg-3 col-form-label" for="min_value">Min value:</label>
-                                <input class="col-sm-6 col-lg-3 form-control" type="number" id="min_value"
-                                       name="min_value"
-                                       min="-5" max="5" step="0.1" value="-1">
                                 <label class="col-sm-6 col-lg-3 col-form-label" for="max_value">Max value:</label>
                                 <input class="col-sm-6 col-lg-3 form-control" type="number" id="max_value"
                                        name="max_value"
-                                       min="-5" max="5" step="0.1" value="1">
+                                       min="0" max="5" step="0.1" value="0" disabled>
                             </div>
                         </div>
                 </fieldset>
@@ -117,19 +112,11 @@
 
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='jquery/jquery-3.6.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='litemol/LiteMol-plugin.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='litemol/static/js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
-
-
-    <script>
-        const get_structure_url = '{{ url_for("get_structure", ID=ID) }}';
-        const get_charges_url = '{{ url_for("get_charges", ID=ID) }}';
-        const get_format_url = '{{ url_for("get_format", ID=ID) }}';
-        init_results("{{ ID }}", "{{ chg_range }}");
-
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.4/dist/index.umd.min.js"></script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+<script>
+    const get_structure_url = '{{ url_for("get_structure", ID=ID) }}';
+    init_results(get_structure_url, '{{ ID }}');
+</script>
 {% endblock scripts %}
 

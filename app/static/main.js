@@ -1,97 +1,91 @@
-'use strict';
+"use strict";
 
+let molstar;
 
-const spinner = '<span class="spinner-border spinner-border-sm" role="status" ' +
-    'aria-hidden="true" style="animation-duration: 1.5s"></span>';
-
-function update_litemol_colors(min_color, max_color) {
-    LiteMolChargesViewerEventQueue.send("lm-set-default-color-scheme", {
-        minVal: min_color,
-        maxVal: max_color,
-        fallbackColor: {r: 0, g: 255, b: 0},
-        minColor: {r: 255, g: 0, b: 0},
-        maxColor: {r: 0, g: 0, b: 255},
-        middleColor: {r: 255, g: 255, b: 255}
-    });
+function init_results(structure_url, id) {
+    (async () => {
+        molstar = await MolstarPartialCharges.create("root");
+        await load(structure_url, id);
+    })().then(
+        () => {
+            // TODO: remove
+            console.log("Mol* initialization ✅");
+        },
+        (error) => {
+            console.log("Mol* initialization ❌", error);
+        }
+    );
 }
 
+async function load(structure_url, id) {
+    const first_example = "P34712_7.2_4";
 
-function init_results(idd, chg_range) {
+    await molstar.load(structure_url);
 
-    const $select = idd
+    if (id === first_example) {
+        document.getElementById("view_surface").setAttribute("checked", "true");
+        await molstar.type.surface();
+    } else {
+        document
+            .getElementById("colors_relative")
+            .setAttribute("checked", "true");
+        await molstar.type.default();
+    }
 
-    let $min_value = $('#min_value');
-    let $max_value = $('#max_value');
-
-        const id = $select;
-        $.ajax({
-            url: get_format_url,
-            success: function (format) {
-                LiteMolChargesViewerEventQueue.send("lm-load-molecule", {
-                    structure_url: get_structure_url,
-                    charges_url: get_charges_url,
-                    structure_format: format,
-                    charges_format: 'TXT'
-                });
-            }
-        })
-
-
-
-
-        $('input:radio[name=colors]').prop('disabled', false);
-
-        if ($('input[name=colors]:checked').val() === 'Relative') {
-            $min_value.val(-chg_range);
-            $max_value.val(chg_range);
-            $min_value.trigger('input');
-        }
-
-
-    $('#min_value, #max_value').on('input', function () {
-        update_litemol_colors(parseFloat($('#min_value').val()), parseFloat($('#max_value').val()));
-        $min_value.attr('max', $max_value.val());
-        $max_value.attr('min', $min_value.val());
-    });
-
-    let $colors = $('input[name=colors]');
-    $colors.on('change', function () {
-        let coloring = $('input[name=colors]:checked').val();
-        if (coloring === 'Relative') {
-            LiteMolChargesViewerEventQueue.send('lm-use-default-themes', {value: false});
-            const id = $select;
-            $min_value.val(-chg_range);
-            $max_value.val(chg_range);
-
-            update_litemol_colors(null, null);
-            $min_value.prop('disabled', true);
-            $max_value.prop('disabled', true);
-        } else if (coloring === 'Absolute') {
-            LiteMolChargesViewerEventQueue.send('lm-use-default-themes', {value: false});
-            $min_value.prop('disabled', false);
-            $max_value.prop('disabled', false);
-            $min_value.trigger('input');
-        } else {
-            /* Coloring by elements */
-            LiteMolChargesViewerEventQueue.send('lm-use-default-themes', {value: true});
-
-        }
-    });
-
-
-    let $view = $('input[name=view]');
-    $view.on('change', function () {
-        let v = $('input[name=view]:checked').val();
-        if (v === 'Cartoon') {
-            LiteMolChargesViewerEventQueue.send('lm-switch-to-cartoons');
-        } else if (v === 'Balls and sticks') {
-            LiteMolChargesViewerEventQueue.send('lm-switch-to-bas');
-        } else {
-            /* Surface */
-            LiteMolChargesViewerEventQueue.send('lm-switch-to-surface');
-        }
-    });
-    $colors.filter(':checked').trigger('change');
+    updateRelativeColor();
+    mountTypeControls();
+    mountColorControls();
 }
 
+function mountTypeControls() {
+    const cartoon = document.getElementById("view_cartoon");
+    const surface = document.getElementById("view_surface");
+    const bas = document.getElementById("view_bas");
+    if (!cartoon || !surface || !bas) return;
+    cartoon.onclick = async () => await molstar.type.default();
+    surface.onclick = async () => await molstar.type.surface();
+    bas.onclick = async () => await molstar.type.ballAndStick();
+}
 
+function mountColorControls() {
+    const structure = document.getElementById("colors_structure");
+    const relative = document.getElementById("colors_relative");
+    const absolute = document.getElementById("colors_absolute");
+    const range = document.getElementById("max_value");
+    if (!structure || !relative || !absolute) return;
+    structure.onclick = async () => await updateDefaultColor();
+    relative.onclick = async () => await updateRelativeColor();
+    absolute.onclick = async () => await updateAbsoluteColor();
+    range.oninput = async () => await updateRange();
+}
+
+async function updateDefaultColor() {
+    const input = document.getElementById("max_value");
+    if (!input) return;
+    input.setAttribute("disabled", "true");
+    await molstar.color.default();
+}
+
+async function updateRelativeColor() {
+    const input = document.getElementById("max_value");
+    if (!input) return;
+    input.setAttribute("disabled", "true");
+    const charge = await molstar.charges.getRelativeCharge();
+    input.value = charge.toFixed(3);
+    // ? updates viewer each time the radio button is clicked ?
+    await molstar.color.relative();
+}
+
+async function updateAbsoluteColor() {
+    const input = document.getElementById("max_value");
+    if (!input) return;
+    input.removeAttribute("disabled");
+}
+
+async function updateRange() {
+    const input = document.getElementById("max_value");
+    if (!input) return;
+    const value = Number(input.value);
+    if (isNaN(value)) return;
+    await molstar.color.absolute(value);
+}
