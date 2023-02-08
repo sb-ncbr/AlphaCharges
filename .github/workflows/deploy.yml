@@ -11,7 +11,7 @@ jobs:
     - name: executing remote ssh commands using password
       uses: appleboy/ssh-action@v0.1.7
       with:
-        username: ${{ secrets.USERNAME }}
+        username: ${{ secrets.METACENTRUM_USERNAME }}
         host: ${{ secrets.METACENTRUM_HOST }}
         key: ${{ secrets.METACENTRUM_PRIVKEY }}
         port: 22
