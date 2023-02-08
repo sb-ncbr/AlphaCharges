@@ -149,7 +149,7 @@ class Calculation:
         currently_running.update([self.ID])
         os.mkdir(self.data_dir)
         os.mknod(f'{self.data_dir}/page_log.txt')
-        with open(f'{root_dir}/logs.txt', 'a') as log_file:
+        with open(f'{root_dir}/calculated_structures/logs.txt', 'a') as log_file:
             log_file.write(f'{remote_addr} {self.code} {self.ph} {self.alphafold_prediction_version} {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
 
     def download_PDB(self):
