@@ -3,8 +3,6 @@
 {% block title %} αCharges – Calculation results {% endblock title %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-
 {% endblock styles %}
 
 {% block body %}
@@ -30,8 +28,9 @@
         <p id="progress"></p>
 
 
-
-        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
 
 
 {% endblock body %}
