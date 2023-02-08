@@ -415,19 +415,6 @@ def get_structure():
                     mimetype='text/plain')
 
 
-@application.route('/format')
-def get_format():
-    return Response('PDB',
-                    mimetype='text/plain')
-
-
-@application.route('/charges')
-def get_charges():
-    ID = request.args.get('ID')
-    return Response(open(f'{root_dir}/calculated_structures/{ID}/charges.txt', 'r').read(),
-                    mimetype='text/plain')
-
-
 @application.route('/calculate_charges/<string:code>')
 def calculate_charges(code: str):
     # API
