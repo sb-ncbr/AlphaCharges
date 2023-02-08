@@ -20,22 +20,20 @@ function init_results(structure_url, id) {
 async function load(structure_url, id) {
     const first_example = "P34712_7.2_4";
 
-    setDefaultRadioButtons();
-
     await molstar.load(structure_url);
 
-    if (id === first_example) await molstar.type.surface();
-    else await molstar.type.default();
+    if (id === first_example) {
+        document.getElementById("view_surface").setAttribute("checked", "true");
+        await molstar.type.surface();
+    }
+    else {
+        document.getElementById("colors_relative").setAttribute("checked", "true");
+        await molstar.type.default();
+    }
 
     updateRelativeColor();
-
     mountTypeControls();
     mountColorControls();
-}
-
-function setDefaultRadioButtons() {
-    document.getElementById("view_surface").setAttribute("checked", "true");
-    document.getElementById("colors_relative").setAttribute("checked", "true");
 }
 
 function mountTypeControls() {
