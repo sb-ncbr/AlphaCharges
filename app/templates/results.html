@@ -4,6 +4,7 @@
 
 {% block styles %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.4/dist/style.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 {% endblock styles %}
 
 {% block body %}
@@ -84,7 +85,7 @@
     <hr>
     <div class="row">
         <div class="col">
-            <div id="root" style="height: 750px"></div>
+            <div id="root"></div>
         </div>
     </div>
     <hr>
