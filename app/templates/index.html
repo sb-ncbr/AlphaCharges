@@ -70,12 +70,18 @@
             <h3>Examples</h3>
         </div>
     </div>
-    <div class="row">
+    <div class="row mt-3">
+        <!-- glycoprotein -->
         <div class="col-lg-4">
-            <strong>P-glycoprotein</strong><br>
-            <p style="text-align:center;"><img src="{{ url_for('static', filename='assets/p_glycoprotein.png') }}"
-                    alt="P-glycoprotein" style="height: 200px"></p>
-            <p><small>
+            <div class="col">
+                <strong>P-glycoprotein</strong>
+            </div>
+            <div class="col text-align mt-3">
+                <img src="{{ url_for('static', filename='assets/p_glycoprotein.png') }}" alt="P-glycoprotein"
+                    style="height: 200px">
+            </div>
+            <div class="col mt-3">
+                <small>
                     P-glycoprotein is part of the ABC transporter proteins that decrease drug accumulation in cancer
                     cells (see details <a
                         href="https://www.sciencedirect.com/science/article/pii/S0041008X0400482X?via%3Dihub"
@@ -87,8 +93,8 @@
                     demonstrate the differences in charge
                     distribution between transmembrane parts and extracellular/intracellular one.
                 </small>
-            </p>
-            <div class="text-center">
+            </div>
+            <div class="col text-center mt-3">
                 <form method=post enctype=multipart/form-data>
                     <input type="hidden" name="ph" value='7.2' />
                     <input type="hidden" name="prediction_version" value='4' />
@@ -96,29 +102,40 @@
                     <button type="submit" class="btn btn-primary" name="action"
                         value="calculate charges">P-glycoprotein</button>
                 </form>
-            </div><br><br>
+            </div>
         </div>
+        <!-- pepsin -->
         <div class="col-lg-4">
-            <strong>Pepsin</strong><br>
-            <label id="ph_range_label" for="customRange1" class="form-label">pH: 1</label>
-            <input type="range" class="form-range" id="ph_range" min=1 max=8 value=1>
-            <img id="cat1" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph1.png') }}"
-                style="height: 200px">
-            <img id="cat2" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph2.png') }}"
-                style="height: 200px" hidden>
-            <img id="cat3" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph3.png') }}"
-                style="height: 200px" hidden>
-            <img id="cat4" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph4.png') }}"
-                style="height: 200px" hidden>
-            <img id="cat5" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph5.png') }}"
-                style="height: 200px" hidden>
-            <img id="cat6" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph6.png') }}"
-                style="height: 200px" hidden>
-            <img id="cat7" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph7.png') }}"
-                style="height: 200px" hidden>
-            <img id="cat8" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph8.png') }}"
-                style="height: 200px" hidden>
-            <p>
+            <div class="col">
+                <div class="row">
+                    <div class="col-4">
+                        <strong>Pepsin</strong>
+                    </div>
+                    <div class="col">
+                        <label id="ph_range_label" for="customRange1" class="form-label m-0">pH: 1</label>
+                        <input type="range" class="form-range" id="ph_range" min=1 max=8 value=1>
+                    </div>
+                </div>
+            </div>
+            <div class="col text-center mt-3">
+                <img id="cat1" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph1.png') }}"
+                    style="height: 200px">
+                <img id="cat2" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph2.png') }}"
+                    style="height: 200px" hidden>
+                <img id="cat3" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph3.png') }}"
+                    style="height: 200px" hidden>
+                <img id="cat4" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph4.png') }}"
+                    style="height: 200px" hidden>
+                <img id="cat5" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph5.png') }}"
+                    style="height: 200px" hidden>
+                <img id="cat6" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph6.png') }}"
+                    style="height: 200px" hidden>
+                <img id="cat7" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph7.png') }}"
+                    style="height: 200px" hidden>
+                <img id="cat8" class="cat_image" src="{{ url_for('static', filename='assets/pepsin_ph8.png') }}"
+                    style="height: 200px" hidden>
+            </div>
+            <div class="col mt-3">
                 <small>
                     Pepsin is the enzyme that is majorly involved in proteins digestion in the stomach. It is secreted
                     as a zymogen and activated by the acidic pH created by the stomach parietal cells. Pepsin is the
@@ -134,9 +151,9 @@
                         href="https://www.sciencedirect.com/science/article/abs/pii/S0141022921001290?via%3Dihub"
                         target="_blank" rel="noreferrer">here</a>).
                 </small>
-            </p>
-            <div class="text-center">
-                <form method=post enctype=multipart/form-data class="btn">
+            </div>
+            <div class="col text-center mt-3">
+                <form method=post enctype=multipart/form-data class=" btn">
                     <input type="hidden" name="ph" value='2' />
                     <input type="hidden" name="prediction_version" value='4' />
                     <input type="hidden" name="code" value='P00791' />
@@ -151,22 +168,27 @@
                         value="calculate charges">Inactive</button>
                 </form>
             </div>
-            <br><br>
         </div>
+        <!-- pin -->
         <div class="col-lg-4">
-            <strong>PIN proteins</strong><br>
-            <p style="text-align:center;"><img src="{{ url_for('static', filename='assets/pin8.png') }}" alt="pin"
-                    style="height: 200px"></p>
-            <p>
+            <div class="col">
+                <strong>PIN proteins</strong>
+            </div>
+            <div class="col text-center mt-3">
+                <img src="{{ url_for('static', filename='assets/pin8.png') }}" alt="pin" style="height: 200px">
+            </div>
+            <div class="col mt-3">
                 <small>
                     The PIN family proteins control plant growth by regulating auxin export from the cytosol to the
                     extracellular space. Eight types of PIN proteins are known (PIN1-PIN8) and this year, structures of
                     three of them were discovered and published in Nature (i.e., articles about <a
-                        href="https://www.nature.com/articles/s41586-022-05143-9" target="_blank"
-                        rel="noreferrer">PIN1</a>, <a href="https://www.nature.com/articles/s41586-022-05142-w"
-                        target="_blank" rel="noreferrer">PIN3</a>, <a
-                        href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank"
-                        rel="noreferrer">PIN8</a>). Partial atomic charges play an important role in PINs functionality.
+                        href=" https://www.nature.com/articles/s41586-022-05143-9" target="_blank" rel="noreferrer">
+                        PIN1</a>,
+                    <a href="https://www.nature.com/articles/s41586-022-05142-w" target="_blank"
+                        rel="noreferrer">PIN3</a>,
+                    <a href="https://www.nature.com/articles/s41586-022-04883-y" target="_blank"
+                        rel="noreferrer">PIN8</a>).
+                    Partial atomic charges play an important role in PINs functionality.
                     The PIN protein part inside the cytosol (containing the cytosolic loop) is charged more than the
                     part outside the cytosol. Questionable is a charge distribution of PIN5, which structure differs
                     from other PINs (see this <a href="https://www.nature.com/articles/s41586-022-04883-y"
@@ -174,8 +196,8 @@
                     use case, you can compare charge distribution of AlphaFold2 predicted PINs from <em>A.
                         thaliana</em>.
                 </small>
-            </p>
-            <div class="text-center">
+            </div>
+            <div class="col text-center mt-3">
                 <form method=post enctype=multipart/form-data class="btn">
                     <input type="hidden" name="ph" value='7.2' />
                     <input type="hidden" name="prediction_version" value='4' />
@@ -249,7 +271,10 @@
         for (let i = 0; i < cat_images.length; ++i) {
             cat_images[i].setAttribute('hidden', true);
         }
-        document.getElementById(`cat${range.value}`).removeAttribute('hidden');
+        console.log(range.value);
+        const keep = document.getElementById(`cat${range.value}`);
+        console.log(keep);
+        keep.removeAttribute('hidden');
     }
 </script>
 {% endblock scripts %}
