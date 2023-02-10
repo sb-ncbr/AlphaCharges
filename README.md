@@ -1,6 +1,4 @@
-# AlphaCharges
-
-**TODO**: Write a project description
+![img](./app/static/assets/logo.png)
 
 ## How to run
 
