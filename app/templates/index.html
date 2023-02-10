@@ -271,9 +271,7 @@
         for (let i = 0; i < cat_images.length; ++i) {
             cat_images[i].setAttribute('hidden', true);
         }
-        console.log(range.value);
         const keep = document.getElementById(`cat${range.value}`);
-        console.log(keep);
         keep.removeAttribute('hidden');
     }
 </script>

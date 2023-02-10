@@ -7,10 +7,7 @@ function init_results(structure_url, id) {
         molstar = await MolstarPartialCharges.create("root");
         await load(structure_url, id);
     })().then(
-        () => {
-            // TODO: remove
-            console.log("Mol* initialization ✅");
-        },
+        () => {},
         (error) => {
             console.log("Mol* initialization ❌", error);
         }
@@ -24,10 +21,7 @@ function init_wrong_structure(structure_url, atomId) {
         await molstar.type.ballAndStick();
         await molstar.color.default();
     })().then(
-        () => {
-            // TODO: remove
-            console.log("Mol* initialization ✅");
-        },
+        () => {},
         (error) => {
             console.log("Mol* initialization ❌", error);
         }
