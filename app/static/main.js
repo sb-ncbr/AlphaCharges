@@ -17,6 +17,23 @@ function init_results(structure_url, id) {
     );
 }
 
+function init_wrong_structure(structure_url, atomId) {
+    (async () => {
+        molstar = await MolstarPartialCharges.create("root");
+        await molstar.load(structure_url, "pdb");
+        await molstar.type.ballAndStick();
+        await molstar.color.default();
+    })().then(
+        () => {
+            // TODO: remove
+            console.log("Mol* initialization ✅");
+        },
+        (error) => {
+            console.log("Mol* initialization ❌", error);
+        }
+    );
+}
+
 async function load(structure_url, id) {
     const first_example = "P34712_7.2_4";
 
