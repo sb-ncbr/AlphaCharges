@@ -1,4 +1,4 @@
-![img](./app/static/assets/logo.png)
+![img](https://github.com/MergunFrimen/alpha-charges/blob/00c8049c46938c501f2bbceeb64f56d72a59dffc/app/static/assets/logo.png)
 
 ## How to run
 
