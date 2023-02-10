@@ -3,7 +3,7 @@
 {% block title %} αCharges – Calculation results {% endblock title %}
 
 {% block styles %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.4/dist/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.7/dist/style.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 {% endblock styles %}
 
@@ -105,7 +105,7 @@
 </div>
 {% endblock body %}
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.6/dist/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.7/dist/index.umd.min.js"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>
 <script>
     const structure_url = '{{ url_for("get_structure", ID=ID, FORMAT="cif") }}';
