@@ -502,3 +502,8 @@ def download_file(ID: str,
         return Response('Wrong format. Supported formats are txt, pdb, pqr and mmcif.',
                         status=400)
     return send_from_directory(data_dir, file, as_attachment=True)
+
+
+@application.errorhandler(404   )
+def page_not_found(error):
+    return render_template('404.html'), 404

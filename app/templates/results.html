@@ -4,119 +4,109 @@
 
 {% block styles %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.4/dist/style.css">
-
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 {% endblock styles %}
 
 {% block body %}
-    <div class="container mt-3 p-3">
-        <div class="row">
-            <div class="col">
-                <h1 style="margin-bottom:25px; color:#1E90FF" class="font-weight-bold"><span style="color:tomato">α</span>Charges – <span>Calculation results</span></h1>
-            </div>
+<div class="container mt-3 p-3">
+    <div class="row">
+        <div class="col">
+            <h1 style="margin-bottom:25px">
+                <strong><span style="color:tomato">α</span><span style="color: #1E90FF">Charges – Calculation
+                        results</span></strong>
+            </h1>
         </div>
-
-        <p>
-            <span style="font-weight:bold"> UniProt code:</span>  <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}" target="_blank" rel="noreferrer"> {{ code }} </a>
-
-        </p>
-
-        <p>
-            <span style="font-weight:bold"> AlphaFold2 prediction version:</span> {{ alphafold_prediction_version }}
-        </p>
-                <p>
-            <span style="font-weight:bold"> pH:</span> {{ ph }}
-        </p>
-        <p>
-            <span style="font-weight:bold"> Number of atoms:</span> {{ n_ats }}
-        </p>
-        <hr>
-        <div class="row">
-            <div class="col-md-6">
-                <fieldset class="row form-group mb-1">
-                        <legend class="font-weight-bold col-form-label col pb-0 pt-0">View</legend>
-                        <div class="col">
-                            <div class="form-check form-check-inline col" title="Cartoon representation">
-                                <input class="form-check-input" type="radio" name="view" id="view_cartoon"
-                                       value="Cartoon" checked>
-                                <label class="form-check-label" for="view_cartoon">Cartoon</label>
-                            </div>
-                            <div class="form-check form-check-inline col" title="Surface representation">
-                                <input class="form-check-input" type="radio" name="view" id="view_surface"
-                                       value="Surface">
-                                <label class="form-check-label" for="view_surface">Surface</label>
-                            </div>
-                            <div class="form-check form-check-inline col" title="Balls and sticks representation">
-                                <input class="form-check-input" type="radio" name="view" id="view_bas"
-                                       value="Balls and sticks">
-                                <label class="form-check-label" for="view_bas">Balls and sticks</label>
-                            </div>
-                        </div>
-                </fieldset>
-
-            </div>
-            <div class="col-md-6">
-
-
-                <fieldset class="row form-group mb-0">
-                        <legend class="font-weight-bold col-form-label col pb-0 pt-0">Coloring</legend>
-                        <div class="col">
-                            <div class="form-check form-check-inline col" title="Use coloring based on the structure">
-                                <input class="form-check-input" type="radio" name="colors" id="colors_structure"
-                                       value="Structure">
-                                <label class="form-check-label" for="colors_structure">Structure</label>
-                            </div>
-                            <div class="form-check form-check-inline col-auto" title="Use coloring based on the largest absolute charge value">
-                                <input class="form-check-input" type="radio" name="colors" id="colors_relative"
-                                       value="Relative" checked>
-                                <label class="form-check-label" for="colors_relative">Charges (relative)</label>
-                            </div>
-                            <div class="form-check form-check-inline col-auto" title="Use coloring based on the specified values below">
-                                <input class="form-check-input" type="radio" name="colors" id="colors_absolute"
-                                       value="Absolute">
-                                <label class="form-check-label" for="colors_absolute">Charges (absolute)</label>
-                            </div>
-                            <div class="form-group form-inline mb-0">
-                                <label class="col-sm-6 col-lg-3 col-form-label" for="max_value">Max value:</label>
-                                <input class="col-sm-6 col-lg-3 form-control" type="number" id="max_value"
-                                       name="max_value"
-                                       min="0" max="5" step="0.1" value="0" disabled>
-                            </div>
-                        </div>
-                </fieldset>
-            </div>
-        </div>
-        <hr>
-
-
-        <div class="row">
-            <div class="col">
-                <div id="root" style="height: 750px"></div>
-            </div>
-        </div>
-        <hr>
-
-
-        <div class="row">
-            <div class="col-7">
-                <a href="{{ url_for('download_files', ID=ID) }}" class="btn btn-success" id="download">Download charges and protonated structure</a>
-            </div>
-            <div class="col text-right">
-                <a href="/" class="btn btn-primary">Back to main page</a>
-            </div>
-        </div>
-
-        <hr>
-        {% include 'base/footer.html' %}
     </div>
+    <p>
+        <span style="font-weight:bold"> UniProt code:</span> <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}"
+            target="_blank" rel="noreferrer"> {{ code }} </a>
+    </p>
+    <p>
+        <span style="font-weight:bold"> AlphaFold2 prediction version:</span> {{ alphafold_prediction_version }}
+    </p>
+    <p>
+        <span style="font-weight:bold"> pH:</span> {{ ph }}
+    </p>
+    <p>
+        <span style="font-weight:bold"> Number of atoms:</span> {{ n_ats }}
+    </p>
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <fieldset class="row form-group mb-1">
+                <legend class="font-weight-bold col-form-label col pb-0 pt-0">View</legend>
+                <div class="col">
+                    <div class="form-check form-check-inline col" title="Cartoon representation">
+                        <input class="form-check-input" type="radio" name="view" id="view_cartoon" value="Cartoon"
+                            checked>
+                        <label class="form-check-label" for="view_cartoon">Cartoon</label>
+                    </div>
+                    <div class="form-check form-check-inline col" title="Surface representation">
+                        <input class="form-check-input" type="radio" name="view" id="view_surface" value="Surface">
+                        <label class="form-check-label" for="view_surface">Surface</label>
+                    </div>
+                    <div class="form-check form-check-inline col" title="Ball & Stick representation">
+                        <input class="form-check-input" type="radio" name="view" id="view_bas" value="Ball & Stick">
+                        <label class="form-check-label" for="view_bas">Ball & Stick</label>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div class="col-md-6">
+            <fieldset class="row form-group mb-0">
+                <legend class="font-weight-bold col-form-label col pb-0 pt-0">Coloring</legend>
+                <div class="col">
+                    <div class="form-check form-check-inline col" title="Use coloring based on the structure">
+                        <input class="form-check-input" type="radio" name="colors" id="colors_structure"
+                            value="Structure">
+                        <label class="form-check-label" for="colors_structure">Structure</label>
+                    </div>
+                    <div class="form-check form-check-inline col-auto"
+                        title="Use coloring based on the largest absolute charge value">
+                        <input class="form-check-input" type="radio" name="colors" id="colors_relative" value="Relative"
+                            checked>
+                        <label class="form-check-label" for="colors_relative">Charges (relative)</label>
+                    </div>
+                    <div class="form-check form-check-inline col-auto"
+                        title="Use coloring based on the specified values below">
+                        <input class="form-check-input" type="radio" name="colors" id="colors_absolute"
+                            value="Absolute">
+                        <label class="form-check-label" for="colors_absolute">Charges (absolute)</label>
+                    </div>
+                    <div class="form-group form-inline mb-0">
+                        <label class="col-sm-6 col-lg-3 col-form-label" for="max_value">Max value:</label>
+                        <input class="col-sm-6 col-lg-3 form-control" type="number" id="max_value" name="max_value"
+                            min="0" max="5" step="0.1" value="0" disabled>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col">
+            <div id="root"></div>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-7">
+            <a href="{{ url_for('download_files', ID=ID) }}" class="btn btn-success" id="download">Download charges and
+                protonated structure</a>
+        </div>
+        <div class="col text-right">
+            <a href="/" class="btn btn-primary">Back to main page</a>
+        </div>
+    </div>
+    <hr>
+    {% include 'base/footer.html' %}
+</div>
 {% endblock body %}
-
-
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.5/dist/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.6/dist/index.umd.min.js"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>
 <script>
     const get_structure_url = '{{ url_for("get_structure", ID=ID) }}';
     init_results(get_structure_url, '{{ ID }}');
 </script>
 {% endblock scripts %}
-

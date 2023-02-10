@@ -80,6 +80,7 @@ async function updateAbsoluteColor() {
     const input = document.getElementById("max_value");
     if (!input) return;
     input.removeAttribute("disabled");
+    await molstar.color.relative();
 }
 
 async function updateRange() {
