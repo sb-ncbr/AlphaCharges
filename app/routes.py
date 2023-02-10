@@ -414,11 +414,10 @@ def download_files():
     return send_from_directory(data_dir, f'{ID}.zip', as_attachment=True)
 
 
-@application.route('/structure')
-def get_structure():
-    ID = request.args.get('ID')
-    return Response(open(f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.cif', 'r').read(),
-                    mimetype='text/plain')
+@application.route('/structure/<ID>/<FORMAT>')
+def get_structure(ID: str, FORMAT: str):
+    filepath = f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.{FORMAT}'
+    return Response(open(filepath, 'r').read(), mimetype='text/plain')
 
 
 @application.route('/calculate_charges/<string:code>')
