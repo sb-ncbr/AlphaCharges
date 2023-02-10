@@ -17,19 +17,21 @@
             </h1>
         </div>
     </div>
-    <p>
-        <span style="font-weight:bold"> UniProt code:</span> <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}"
-            target="_blank" rel="noreferrer"> {{ code }} </a>
-    </p>
-    <p>
-        <span style="font-weight:bold"> AlphaFold2 prediction version:</span> {{ alphafold_prediction_version }}
-    </p>
-    <p>
-        <span style="font-weight:bold"> pH:</span> {{ ph }}
-    </p>
-    <p>
-        <span style="font-weight:bold"> Number of atoms:</span> {{ n_ats }}
-    </p>
+    <div class="row">
+        <div class="col-12 mt-0">
+            <strong> UniProt code:</strong> <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}" target="_blank"
+                rel="noreferrer"> {{ code }} </a>
+        </div>
+        <div class="col-12 mt-1">
+            <strong> AlphaFold2 prediction version:</strong> {{ alphafold_prediction_version }}
+        </div>
+        <div class="col-12 mt-1">
+            <strong> pH:</strong> {{ ph }}
+        </div>
+        <div class="col-12 mt-1">
+            <strong> Number of atoms:</strong> {{ n_ats }}
+        </div>
+    </div>
     <hr>
     <div class="row">
         <div class="col-md-6">
@@ -95,7 +97,7 @@
                 protonated structure</a>
         </div>
         <div class="col text-right">
-            <a href="/" class="btn btn-primary">Back to main page</a>
+            <a href="{{ url_for('main_site') }}" class="btn btn-primary">Back to main page</a>
         </div>
     </div>
     <hr>

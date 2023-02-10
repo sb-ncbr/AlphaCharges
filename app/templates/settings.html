@@ -12,19 +12,27 @@
                 </h1>
             </div>
         </div>
-        <p>
-            <span style="font-weight:bold"> UniProt code:</span> {{ code }}
-        </p>
+        <div class="row">
+            <div class="col-12 mt-0">
+                <strong> UniProt code: </strong> <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}" target="_blank"
+                    rel="noreferrer">{{ code }} </a>
+            </div>
+        </div>
         <hr>
-        {% include 'base/flash.html' %}
+        <div class="row">
+            <div class="col-12">
+                {% include 'base/flash.html' %}
+            </div>
+        </div>
         <input type="hidden" name="code" value='{{ code }}' />
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-6 pl-0">
                 <div class="form-group col-sm-6 col-lg-5">
                     <label style="color:black; font-weight:bold;" for="title">Protonate in pH:</label>
                     <input type="number" min=0 max=14 step="0.1" name="ph" class="form-control" value="7.2">
                 </div>
                 <br>
+                <!-- TODO: remove is unused -->
                 <!-- <fieldset class="form-group mb-0">
                     <legend class="col-form-label col pb-0 pt-0" style="color:black; font-weight:bold;">Structure
                         optimization:</legend>
@@ -72,11 +80,11 @@
         <br>
         <div class="row">
             <div class="col-6">
-                <button type="submit" class="btn btn-primary" name="action" value="calculate charges">Calculate
+                <button type="submit" class="btn btn-success" name="action" value="calculate charges">Calculate
                     charges</button>
             </div>
-            <div class="col-6 text-right">
-                <button class="btn btn-primary" onclick="location.href='/'" type="button">Back to main page</button>
+            <div class="col text-right">
+                <a href="{{ url_for('main_site') }}" class="btn btn-primary">Back to main page</a>
             </div>
         </div>
     </form>
