@@ -15,18 +15,20 @@
             </h1>
         </div>
     </div>
-    <p>
-        <span style="font-weight:bold"> UniProt code:</span>
-        <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}" target="_blank" rel="noreferrer"> {{ code }} </a>
-    </p>
-    <p>
-        <span style="font-weight:bold"> AlphaFold2 prediction version:</span> {{ alphafold_prediction_version }}
-    </p>
-    <p>
-        <span style="font-weight:bold"> pH:</span> {{ ph }}
-    </p>
+    <div class="row">
+        <div class="col-12 mt-0">
+            <strong> UniProt code:</strong> <a href="https://alphafold.ebi.ac.uk/entry/{{ code }}" target="_blank"
+                rel="noreferrer"> {{ code }} </a>
+        </div>
+        <div class="col-12 mt-1">
+            <strong> AlphaFold2 prediction version:</strong> {{ alphafold_prediction_version }}
+        </div>
+        <div class="col-12 mt-1">
+            <strong> pH:</strong> {{ ph }}
+        </div>
+    </div>
     <hr>
-    <p id="progress"></p>
+    <div id="progress"></div>
     <div class="spinner-border text-primary" role="status">
         <span class="sr-only">Loading...</span>
     </div>

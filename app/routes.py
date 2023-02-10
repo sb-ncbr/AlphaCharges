@@ -30,7 +30,7 @@ class Logs:
 
     def add_log(self,
                 log: str):
-        html_log = f'<p><span style="font-weight:bold"> Step {self.step}/{self.max_steps}:</span> {log}</p>\n'
+        html_log = f'<p><strong> Step {self.step}/{self.max_steps}:</strong> {log}</p>\n'
         previous_logs = open(f'{self.data_dir}/page_log.txt').readlines()
         with open(f'{self.data_dir}/page_log.txt', 'w') as page_log_file:
             if len(previous_logs) and '...' in previous_logs[-1]:
@@ -339,6 +339,10 @@ def calculation():
 def wrong_structure():
     ID = request.args.get('ID')
     message = request.args.get('message')
+    problematic_atom = request.args.get('message')
+    message = Markup(f'There is an error with atom with index <strong>{problematic_atom}</strong>! '
+                'The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.')
+    flash(message, 'danger')
     return render_template('wrong_structure.html',
                            code=ID.split('_')[0],
                            ID=ID,
@@ -414,11 +418,10 @@ def download_files():
     return send_from_directory(data_dir, f'{ID}.zip', as_attachment=True)
 
 
-@application.route('/structure')
-def get_structure():
-    ID = request.args.get('ID')
-    return Response(open(f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.cif', 'r').read(),
-                    mimetype='text/plain')
+@application.route('/structure/<ID>/<FORMAT>')
+def get_structure(ID: str, FORMAT: str):
+    filepath = f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.{FORMAT}'
+    return Response(open(filepath, 'r').read(), mimetype='text/plain')
 
 
 @application.route('/calculate_charges/<string:code>')
