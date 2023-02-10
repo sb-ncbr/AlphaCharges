@@ -9,7 +9,7 @@ function init_results(structure_url, id) {
     })().then(
         () => {},
         (error) => {
-            console.log("Mol* initialization ❌", error);
+            console.error("Mol* initialization ❌", error);
         }
     );
 }
@@ -23,7 +23,7 @@ function init_wrong_structure(structure_url, atomId) {
     })().then(
         () => {},
         (error) => {
-            console.log("Mol* initialization ❌", error);
+            console.error("Mol* initialization ❌", error);
         }
     );
 }
