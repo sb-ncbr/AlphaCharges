@@ -1,4 +1,10 @@
-![img](https://github.com/MergunFrimen/alpha-charges/blob/00c8049c46938c501f2bbceeb64f56d72a59dffc/app/static/assets/logo.png)
+<div align="center">
+  <br>
+  <br>
+  <a href=""><img src="https://github.com/sb-ncbr/AlphaCharges/blob/50265b26f8748e4afa3b9d4619e8f04e83640b13/app/static/assets/logo.png" alt="AlphaCharges" width="600"></a>
+  <br>
+  <br>
+</div>
 
 ## How to run
 
