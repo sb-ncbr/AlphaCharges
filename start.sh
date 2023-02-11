@@ -6,7 +6,7 @@ sudo apt update -y && sudo apt upgrade -y && \
 
 # clone repo
 cd /opt
-sudo git clone -b stable --depth 1 https://github.com/dargen3/AlphaCharges AlphaCharges
+sudo git clone -b stable --depth 1 https://github.com/sb-ncbr/AlphaCharges AlphaCharges
 
 # install python deps
 sudo python3 -m venv venv
