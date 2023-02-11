@@ -1,7 +1,7 @@
 <div align="center">
   <br>
   <br>
-  <a href=""><img src="https://github.com/sb-ncbr/AlphaCharges/blob/50265b26f8748e4afa3b9d4619e8f04e83640b13/app/static/assets/logo.png" alt="AlphaCharges" width="600"></a>
+  <a href="https://github.com/sb-ncbr/AlphaCharges"><img src="https://github.com/sb-ncbr/AlphaCharges/blob/50265b26f8748e4afa3b9d4619e8f04e83640b13/app/static/assets/logo.png" alt="AlphaCharges" width="600"></a>
   <br>
   <br>
 </div>
