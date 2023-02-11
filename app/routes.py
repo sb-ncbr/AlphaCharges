@@ -61,6 +61,13 @@ def valid_prediction_version(version):
         return version, False
     return version, True
 
+
+def valid_alphafold_request(code, alphafold_prediction_version):
+    # check whether UniProt code is valid, ping AlphaFold website
+    response = requests.head(f'https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb')
+    return response.status_code == 200
+
+
 def is_calculated(ID):
     # check whether the structure with the given setting has already been calculated
     if os.path.isdir(f'{root_dir}/calculated_structures/{ID}'):
@@ -69,12 +76,6 @@ def is_calculated(ID):
         else:  # for case that results directory exists without results (e.g. charges.txt)
             os.system(f'rm -r {root_dir}/calculated_structures/{ID}')
     return False
-
-def is_valid_alphafold_request(code, alphafold_prediction_version):
-    # check whether UniProt code is valid, ping AlphaFold website
-    response = requests.head(f'https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb')
-    return response.status_code == 200
-
 
 
 @application.route('/', methods=['GET', 'POST'])
@@ -116,7 +117,7 @@ def main_site():
                 return redirect(url_for('results',
                                         ID=ID))
 
-            if not is_valid_alphafold_request(code, alphafold_prediction_version):
+            if not valid_alphafold_request(code, alphafold_prediction_version):
                 message = Markup(f'The structure with UniProt code <strong>{code}</strong> in prediction version <strong>{alphafold_prediction_version}</strong> '
                       f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
                       f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
@@ -323,12 +324,14 @@ def calculation():
                               empirical_method)
     calculation.download_PDB()
     calculation.protonate_structure()
-    loaded, problematic_atom = calculation.load_molecule()
+    loaded, problematic_atoms = calculation.load_molecule()
     if not loaded:
+        currently_running.remove(calculation.ID)
         return redirect(url_for('wrong_structure',
                                 ID=calculation.ID,
-                                code=calculation.code,
-                                message=problematic_atom))
+                                alphafold_prediction_version=calculation.alphafold_prediction_version,
+                                ph=calculation.ph,
+                                problematic_atoms=problematic_atoms))
     calculation.precalculate_parameters()
     calculation.create_submolecules()
     calculation.calculate_charges()
@@ -338,15 +341,15 @@ def calculation():
 @application.route('/wrong_structure')
 def wrong_structure():
     ID = request.args.get('ID')
-    message = request.args.get('message')
-    problematic_atom = request.args.get('message')
-    message = Markup(f'There is an error with atom with index <strong>{problematic_atom}</strong>! '
-                'The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.')
+    problematic_atoms = request.args.get('problematic_atoms')
+    message = Markup(f'There is an error with atoms <strong>{problematic_atoms}</strong>! '
+                      'The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.')
     flash(message, 'danger')
     return render_template('wrong_structure.html',
                            code=ID.split('_')[0],
                            ID=ID,
-                           message=message)
+                           ph=request.args.get('ph'),
+                           alphafold_prediction_version=request.args.get('alphafold_prediction_version'))
 
 
 @application.route('/progress')
@@ -459,7 +462,7 @@ def calculate_charges(code: str):
             sleep(1)
     else:
         if not is_calculated(ID):
-            if not is_valid_alphafold_request(code, alphafold_prediction_version):
+            if not valid_alphafold_request(code, alphafold_prediction_version):
                 message_dict.update({'status': 'failed',
                                      'error message': f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
                                                       f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
@@ -473,6 +476,7 @@ def calculate_charges(code: str):
             calculation.protonate_structure()
             loaded, problematic_atom = calculation.load_molecule()
             if not loaded:
+                currently_running.remove(ID)
                 message_dict.update({'status': 'failed',
                                      'error message': f'There is an error with atom with index {problematic_atom}!'
                                                       f' The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.',})

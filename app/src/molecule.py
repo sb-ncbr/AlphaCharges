@@ -76,15 +76,16 @@ class Molecule:
                                open(pqr_file, "r").readlines()[:-2]))
 
         # load molecule by rdkit
-        Chem.WrapLogs()
-        terminal_stdout = sys.stderr
-        sio = sys.stderr = StringIO()
+        #Chem.WrapLogs()
+        #terminal_stdout = sys.stderr
+        #sio = sys.stderr = StringIO()
         self.rdkit_mol = Chem.MolFromPDBFile(pdb_file,
                                              removeHs=False,
                                              sanitize=False)
-        if self.rdkit_mol is None:
-            raise ValueError(f"{sio.getvalue().split()[6]}")
-        sys.stderr = terminal_stdout
+        #if self.rdkit_mol is None:
+        #    print(sio.getvalue().split())
+        #    raise ValueError(f"{sio.getvalue().split()[6]}")
+        # sys.stderr = terminal_stdout
 
         # load atoms and bonds
         self.symbols = [atom.GetSymbol() for atom in self.rdkit_mol.GetAtoms()]
@@ -115,9 +116,16 @@ class Molecule:
                        for ba1, ba2, bond_type in bonds]
 
         # control, whether molecule consist of standart aminoacids
-        for i, atba in enumerate(ats_sreprba):
+        atypic_atoms = []
+        for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba, self.rdkit_mol.GetAtoms())):
             if atba not in real_ats_types:
-                raise ValueError(f"{i+1}")
+                atypic_atoms.append(f"{rdkit_at.GetPDBResidueInfo().GetResidueName()} "
+                                    f"{rdkit_at.GetPDBResidueInfo().GetResidueNumber()}"
+                                    f"{rdkit_at.GetPDBResidueInfo().GetName().rstrip()}")
+        if atypic_atoms:
+            print(', '.join(atypic_atoms))
+            raise ValueError(', '.join(atypic_atoms))
+
 
         self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
 
