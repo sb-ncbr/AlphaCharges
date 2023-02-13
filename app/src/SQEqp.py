@@ -96,23 +96,28 @@ def precalculate_parameters_SQEqp(atomic_types, bonds_types, parameters, bond_ha
         precalc_bond_hardnesses[i] = bond_hardnesses[bonds_types[i]]
     return precalc_params, precalc_bond_hardnesses
 
-def load_parameters(root_dir):
-    params_SQEqps = json.load(open(f"{root_dir}/parameters/parameters_SQEqps.json"))
-    parameters_SQEqps = Dict.empty(key_type=types.unicode_type,
-                                   value_type=types.float32[:])
-    for key, value in params_SQEqps["atom"]["data"].items():
-        parameters_SQEqps[key] = np.array(value, dtype=np.float32)
-    bond_hardnesses_SQEqps = Dict.empty(key_type=types.unicode_type,
-                                        value_type=types.float64)
-    for key, value in params_SQEqps["bond"]["data"].items():
-        bond_hardnesses_SQEqps[key] = value
-    params_SQEqp = json.load(open(f"{root_dir}/parameters/parameters_SQEqp.json"))
-    parameters_SQEqp = Dict.empty(key_type=types.unicode_type,
-                                   value_type=types.float32[:])
-    for key, value in params_SQEqp["atom"]["data"].items():
-        parameters_SQEqp[key] = np.array(value, dtype=np.float32)
-    bond_hardnesses_SQEqp = Dict.empty(key_type=types.unicode_type,
-                                        value_type=types.float64)
-    for key, value in params_SQEqp["bond"]["data"].items():
-        bond_hardnesses_SQEqp[key] = value
-    return parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps
+def load_parameters(root_dir: str,
+                    empirical_method: str):
+    if empirical_method == "SQEqp":
+        parameters_json = json.load(open(f"{root_dir}/parameters/parameters_SQEqp.json"))
+        parameters = Dict.empty(key_type=types.unicode_type,
+                                value_type=types.float32[:])
+        for key, value in parameters_json["atom"]["data"].items():
+            parameters[key] = np.array(value, dtype=np.float32)
+        bond_hardnesses = Dict.empty(key_type=types.unicode_type,
+                                     value_type=types.float64)
+        for key, value in parameters_json["bond"]["data"].items():
+            bond_hardnesses[key] = value
+
+    elif empirical_method == "SQEqps":
+        parameters_json = json.load(open(f"{root_dir}/parameters/parameters_SQEqps.json"))
+        parameters = Dict.empty(key_type=types.unicode_type,
+                                value_type=types.float32[:])
+        for key, value in parameters_json["atom"]["data"].items():
+            parameters[key] = np.array(value, dtype=np.float32)
+        bond_hardnesses = Dict.empty(key_type=types.unicode_type,
+                                     value_type=types.float64)
+        for key, value in parameters_json["bond"]["data"].items():
+            bond_hardnesses[key] = value
+
+    return parameters, bond_hardnesses

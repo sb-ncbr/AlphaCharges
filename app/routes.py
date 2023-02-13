@@ -1,14 +1,10 @@
 import os
 import requests
 import zipfile
-import gemmi
-from time import time, sleep
-from datetime import datetime
+from time import sleep
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
-from src import SQEqp
-from src.molecule import Molecule
-from src.logs import Logs
 from src.input_validators import valid_pH, valid_prediction_version, valid_alphafold_request
+from src.calculation import Calculation
 from random import random
 
 
@@ -17,9 +13,7 @@ application.jinja_env.trim_blocks = True
 application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = str(random())
 root_dir = os.path.dirname(os.path.abspath(__file__))
-parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps = SQEqp.load_parameters(root_dir)
 currently_running = set()
-
 
 
 def is_calculated(ID):
@@ -90,192 +84,14 @@ def main_site():
         return render_template('index.html')
 
 
-class Calculation:
-    def __init__(self,
-                 ID,
-                 remote_addr,
-                 empirical_method: str):
-        self.ID = ID
-        self.empirical_method = empirical_method
-        self.code, self.ph, self.alphafold_prediction_version = self.ID.split('_')
-        self.data_dir = f'{root_dir}/calculated_structures/{self.ID}'
-        self.pdb_file = f'{self.data_dir}/{self.code}.pdb' # original pdb from alphafold, without hydrogens
-        self.pdb_file_with_hydrogens = f'{self.data_dir}/{self.code}_added_H.pdb'
-        self.pqr_file = f'{self.data_dir}/{self.code}.pqr'
-        self.logs = Logs(data_dir=self.data_dir,
-                         empirical_method=self.empirical_method)
-        currently_running.update([self.ID])
-        os.mkdir(self.data_dir)
-        os.mknod(f'{self.data_dir}/page_log.txt')
-        with open(f'{root_dir}/calculated_structures/logs.txt', 'a') as log_file:
-            log_file.write(f'{remote_addr} {self.code} {self.ph} {self.alphafold_prediction_version} {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
-
-    def download_PDB(self):
-        self.logs.add_log('Structure download...')
-        s = time()
-        response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v{self.alphafold_prediction_version}.pdb')
-        with open(f'{self.pdb_file}', 'w') as pdb_file:
-            pdb_file.write(response.text)
-        self.logs.add_log(f'Structure downloaded. ({round(time() - s, 2)}s)')
-
-    def protonate_structure(self):
-        self.logs.add_log('Protonation of structure...')
-        s = time()
-        # TODO: remove hardcoded path 
-        os.system(f'/opt/venv/bin/pdb2pqr30 --log-level DEBUG --noopt --titration-state-method propka '
-                  f'--with-ph {self.ph} --pdb-output {self.pdb_file_with_hydrogens} {self.pdb_file} '
-                  f'{self.pqr_file} > {self.data_dir}/propka.log 2>&1 ')
-        self.logs.add_log(f'Structure protonated. ({round(time() - s, 2)}s)')
-
-    def load_molecule(self):
-        self.logs.add_log('Loading of molecule...')
-        s = time()
-        try:
-            self.molecule = Molecule(self.pdb_file_with_hydrogens,
-                                     self.pqr_file)
-        except ValueError as e:
-            return False, str(e)
-        self.logs.add_log(f'Molecule loaded. ({round(time() - s, 2)}s)')
-        return True, None
-
-    def precalculate_parameters(self):
-        if self.empirical_method == 'SQEqp':
-            self.logs.add_log('Assigning parameters...')
-            s = time()
-            self.molecule.precalc_params, \
-                self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqp(self.molecule.ats_srepr,
-                                                                                            self.molecule.bonds_srepr,
-                                                                                            parameters_SQEqp,
-                                                                                            bond_hardnesses_SQEqp)
-            self.logs.add_log(f'Parameters assigned. ({round(time() - s, 2)}s)')
-
-        elif self.empirical_method == 'SQEqps':
-            self.logs.add_log('Calculation of solvatable surface...')
-            s = time()
-            self.molecule.calculate_surfaces(cpu=1)
-            self.logs.add_log(f'Solvatable surface calculated. ({round(time() - s, 2)}s)')
-
-            self.logs.add_log('Precalculate parameters...')
-            s = time()
-            self.molecule.precalc_params, \
-                self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqps(self.molecule.ats_srepr,
-                                                                                             self.molecule.bonds_srepr,
-                                                                                             self.molecule.surfaces,
-                                                                                             parameters_SQEqps,
-                                                                                             bond_hardnesses_SQEqps)
-            self.logs.add_log(f'Parameters precalculated. ({round(time() - s, 2)}s)')
-
-    def create_submolecules(self):
-        self.logs.add_log('Creation of submolecules...')
-        s = time()
-        self.molecule.create_submolecules()
-        self.logs.add_log(f'Submolecules created. ({round(time() - s, 2)}s)')
-
-    def calculate_charges(self):
-        self.logs.add_log('Calculation of partial atomic charges...')
-        s = time()
-
-        # calculation of charges
-        # with Pool(n_cpu) as p:
-        #    all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
-        # all_charges = [chg for chgs in all_charges for chg in chgs]
-        all_charges = []
-        for substructure in self.molecule.substructures:
-            all_charges.extend(SQEqp.calculate_charges(substructure))
-        all_charges -= (sum(all_charges) - self.molecule.total_chg) / len(all_charges)
-        charges = all_charges
-
-        # write charges to files
-        self.write_txt(charges)
-        self.write_pqr(charges)
-        self.write_mmcif(charges)
-
-        self.logs.add_log(f'Partial atomic charges calculated. ({round(time() - s, 2)}s)')
-        currently_running.remove(self.ID)
-
-    def write_txt(self, charges):
-        with open(f'{self.data_dir}/charges.txt', 'w') as chg_file:
-            chg_file.write(f'{self.code}\n' + ' '.join([str(round(charge, 4)) for charge in charges]) + ' \n')
-
-    def write_pqr(self, charges):
-        pqr_file_lines = open(self.pqr_file).readlines()
-        c = 0
-        new_lines = []
-        for line in pqr_file_lines:
-            if line[:4] == 'ATOM':
-                new_lines.append(line[:54] + '{:>8.4f}'.format(charges[c]) + line[62:])
-                c += 1
-            else:
-                new_lines.append(line)
-        with open(self.pqr_file, 'w') as pqr_file:
-            pqr_file.write(''.join(new_lines))
-
-    def write_mmcif(self, charges):
-        input_file = self.pdb_file_with_hydrogens
-        filename, _ = os.path.splitext(input_file)
-        output_file = f"{filename}.cif"
-
-        structure = gemmi.read_pdb(input_file)
-        structure.setup_entities()
-        structure.assign_label_seq_id()
-        block = structure.make_mmcif_block()
-
-        # remove pesky _chem_comp category >:(
-        block.find_mmcif_category('_chem_comp.').erase()
-
-        create_loop_charges_meta(block)
-        create_loop_charges_data(block, charges)
-
-        block.write_file(output_file)
-
-
-def create_loop_charges_meta(block):
-    partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta."
-    partial_atomic_charges_meta_attributes = [
-        "id",
-        "type",
-        "method",
-    ]
-
-    metadata_loop = block.init_loop(
-        partial_atomic_charges_meta_prefix,
-        partial_atomic_charges_meta_attributes
-    )
-
-    metadata_loop.add_row([
-        '1',
-        "'empirical'",
-        "'SQE+qp/Schindler 2021 (PUB_pept)'",
-    ])
-
-
-def create_loop_charges_data(block, charges):
-    partial_atomic_charges_prefix = "_partial_atomic_charges."
-    partial_atomic_charges_attributes = [
-        "type_id",
-        "atom_id",
-        "charge",
-    ]
-
-    charges_loop = block.init_loop(
-        partial_atomic_charges_prefix,
-        partial_atomic_charges_attributes
-    )
-
-    for atomId, charge in enumerate(charges):
-        charges_loop.add_row([
-            "1",
-            f"{atomId + 1}",
-            f"{charge: .4f}",
-        ])
-
 
 @application.route('/calculation', methods=['POST'])
 def calculation():
     empirical_method = 'SQEqp'
     calculation = Calculation(request.args.get('ID'),
                               request.remote_addr,
-                              empirical_method)
+                              empirical_method,
+                              root_dir)
     calculation.download_PDB()
     calculation.protonate_structure()
     loaded, problematic_atoms = calculation.load_molecule()
@@ -425,7 +241,8 @@ def calculate_charges(code: str):
                 return jsonify(message_dict), 400
             calculation = Calculation(ID,
                                       request.remote_addr,
-                                      empirical_method)
+                                      empirical_method,
+                                      root_dir)
             calculation.download_PDB()
             calculation.protonate_structure()
             loaded, problematic_atom = calculation.load_molecule()
@@ -465,6 +282,6 @@ def download_file(ID: str,
     return send_from_directory(data_dir, file, as_attachment=True)
 
 
-@application.errorhandler(404   )
+@application.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html'), 404
