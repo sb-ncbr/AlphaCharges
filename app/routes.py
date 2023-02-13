@@ -1,7 +1,7 @@
 import os
 import requests
 import zipfile
-from time import sleep
+from time import sleep, time
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
 from src.input_validators import valid_pH, valid_prediction_version, valid_alphafold_request
 from src.calculation import Calculation
@@ -13,18 +13,28 @@ application.jinja_env.trim_blocks = True
 application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = str(random())
 root_dir = os.path.dirname(os.path.abspath(__file__))
-currently_running = set()
 
 
-def is_calculated(ID):
-    # check whether the structure with the given setting has already been calculated
-    if os.path.isdir(f'{root_dir}/calculated_structures/{ID}'):
-        if os.path.isfile(f'{root_dir}/calculated_structures/{ID}/charges.txt'):
+def already_calculated(ID):
+    path = f'{root_dir}/calculated_structures/{ID}'
+    if os.path.isdir(path):
+        if os.path.isfile(f'{path}/charges.txt') or os.path.isfile(f'{path}/problematic_atoms.txt'):
             return True
-        else:  # for case that results directory exists without results (e.g. charges.txt)
+        elif time() - os.stat(path).st_mtime > 180:
+            # for case that results directory exists without results (charges.txt or problematic_atoms.txt)
+            # it means that something unexpected happen during calculation
             os.system(f'rm -r {root_dir}/calculated_structures/{ID}')
     return False
 
+def is_running(ID):
+    path = f'{root_dir}/calculated_structures/{ID}'
+    if os.path.isdir(path):
+        if os.path.isfile(f'{path}/charges.txt') or os.path.isfile(f'{path}/problematic_atoms.txt'):
+            return False
+        elif time() - os.stat(path).st_mtime > 180:
+            return False
+        return True
+    return False
 
 @application.route('/', methods=['GET', 'POST'])
 def main_site():
@@ -53,7 +63,7 @@ def main_site():
             ID = f'{code}_{ph}_{alphafold_prediction_version}'
 
             # check whether the structure is currently calculated
-            if ID in currently_running:
+            if is_running(ID):
                 message = Markup(f'The partial atomic charges for your input are just calculated. '
                              f'For results visit  <a href="https://alphacharges.ncbr.muni.cz/results?ID={ID}" class="alert-link"'
                              f'target="_blank" rel="noreferrer">https://alphacharges.ncbr.muni.cz/results?ID={ID}</a>'
@@ -61,7 +71,7 @@ def main_site():
                 flash(message, 'info')
                 return render_template('index.html')
 
-            if is_calculated(ID):
+            if already_calculated(ID):
                 return redirect(url_for('results',
                                         ID=ID))
 
@@ -94,32 +104,29 @@ def calculation():
                               root_dir)
     calculation.download_PDB()
     calculation.protonate_structure()
-    loaded, problematic_atoms = calculation.load_molecule()
+    loaded, _ = calculation.load_molecule()
     if not loaded:
-        currently_running.remove(calculation.ID)
         return redirect(url_for('wrong_structure',
-                                ID=calculation.ID,
-                                alphafold_prediction_version=calculation.alphafold_prediction_version,
-                                ph=calculation.ph,
-                                problematic_atoms=problematic_atoms))
+                                ID=calculation.ID))
     calculation.precalculate_parameters()
     calculation.create_submolecules()
     calculation.calculate_charges()
-    return redirect(url_for('results',
-                            ID=calculation.ID))
+    return redirect(url_for('results/{ID}'))
+                            # ID=calculation.ID))
 
 @application.route('/wrong_structure')
 def wrong_structure():
     ID = request.args.get('ID')
-    problematic_atoms = request.args.get('problematic_atoms')
+    code, ph, alphafold_prediction_version = ID.split('_')
+    problematic_atoms=open(f'{root_dir}/calculated_structures/{ID}/problematic_atoms.txt', 'r').read()
     message = Markup(f'There is an error with atoms <strong>{problematic_atoms}</strong>! '
                       'The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.')
     flash(message, 'danger')
     return render_template('wrong_structure.html',
-                           code=ID.split('_')[0],
                            ID=ID,
-                           ph=request.args.get('ph'),
-                           alphafold_prediction_version=request.args.get('alphafold_prediction_version'))
+                           code=code,
+                           ph=ph,
+                           alphafold_prediction_version=alphafold_prediction_version)
 
 
 @application.route('/progress')
@@ -129,15 +136,8 @@ def progress():
     return open(f'{data_dir}/page_log.txt', 'r').read()
 
 
-@application.route('/results')
-def results():
-    ID = request.args.get('ID')
-
-    if ID is None:
-        message = Markup('No ID parameter was entered in your request! The ID should be of the form <strong>&ltUniProt code&gt_&ltph&gt_&ltAlphaFold2 prediction version&gt</strong>.')
-        flash(message, 'danger')
-        return redirect(url_for('main_site'))
-
+@application.route('/results/<ID>')
+def results(ID: str):
     try:
         code, ph, alphafold_prediction_version = ID.split('_')
     except:
@@ -147,17 +147,18 @@ def results():
 
     data_dir = f'{root_dir}/calculated_structures/{ID}'
 
-    try:
-        absolute_charges = [abs(float(x)) for x in open(f'{data_dir}/charges.txt', 'r').readlines()[1].split()]
-    except FileNotFoundError:
-        os.system(f'rm -r {data_dir}')
+    if not already_calculated(ID) and not is_running(ID):
         message = Markup(f'There are no results for structure with UniProt <strong>{code}</strong> in AlphaFold2 prediction version <strong>{alphafold_prediction_version}</strong> and pH <strong>{ph}</strong>.')
         flash(message, 'danger')
         return redirect(url_for('main_site'))
 
+    if os.path.isfile(f'{data_dir}/problematic_atoms.txt'):
+        return redirect(url_for('wrong_structure',
+                                ID=ID))
+
+    absolute_charges = [abs(float(x)) for x in open(f'{data_dir}/charges.txt', 'r').readlines()[1].split()]
     chg_range = round(max(absolute_charges), 4)
     n_ats = len(absolute_charges)
-
     return render_template('results.html',
                            ID=ID,
                            chg_range=chg_range,
@@ -192,7 +193,8 @@ def download_files():
 
 
 @application.route('/structure/<ID>/<FORMAT>')
-def get_structure(ID: str, FORMAT: str):
+def get_structure(ID: str,
+                  FORMAT: str):
     filepath = f'{root_dir}/calculated_structures/{ID}/{ID.split("_")[0]}_added_H.{FORMAT}'
     return Response(open(filepath, 'r').read(), mimetype='text/plain')
 
@@ -227,11 +229,11 @@ def calculate_charges(code: str):
         return jsonify(message_dict), 400
 
     ID = f'{code}_{ph}_{alphafold_prediction_version}'
-    if ID in currently_running:
-        while ID in currently_running:
-            sleep(1)
+    if is_running(ID):
+        while is_running(ID):
+            sleep(5)
     else:
-        if not is_calculated(ID):
+        if not already_calculated(ID):
             if not valid_alphafold_request(code, alphafold_prediction_version):
                 message_dict.update({'status': 'failed',
                                      'error message': f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
@@ -245,12 +247,11 @@ def calculate_charges(code: str):
                                       root_dir)
             calculation.download_PDB()
             calculation.protonate_structure()
-            loaded, problematic_atom = calculation.load_molecule()
+            loaded, problematic_atoms = calculation.load_molecule()
             if not loaded:
-                currently_running.remove(ID)
                 message_dict.update({'status': 'failed',
-                                     'error message': f'There is an error with atom with index {problematic_atom}!'
-                                                      f' The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.',})
+                                     'error message': f'There is an error with atoms <strong>{problematic_atoms}</strong>! '
+                                                      f'The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.'})
                 return jsonify(message_dict), 501
             calculation.precalculate_parameters()
             calculation.create_submolecules()
@@ -263,7 +264,7 @@ def calculate_charges(code: str):
 @application.route('/download_file/<string:ID>/<string:format>')
 def download_file(ID: str,
                   format: str):
-    if not is_calculated(ID):
+    if not already_calculated(ID):
         return Response(f'No results calculated for this ID.',
                         status=400)
     code = ID.split('_')[0]

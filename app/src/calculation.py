@@ -23,7 +23,6 @@ class Calculation:
         self.pqr_file = f'{self.data_dir}/{self.code}.pqr'
         self.logs = Logs(data_dir=self.data_dir,
                          empirical_method=self.empirical_method)
-        #currently_running.update([self.ID])
         os.mkdir(self.data_dir)
         os.mknod(f'{self.data_dir}/page_log.txt')
         with open(f'{self.root_dir}/calculated_structures/logs.txt', 'a') as log_file:
@@ -52,8 +51,10 @@ class Calculation:
         try:
             self.molecule = Molecule(self.pdb_file_with_hydrogens,
                                      self.pqr_file)
-        except ValueError as e:
-            return False, str(e)
+        except ValueError as error:
+            with open(f"{self.data_dir}/problematic_atoms.txt", "w") as problematic_atoms_file:
+                problematic_atoms_file.write(str(error))
+            return False, str(error)
         self.logs.add_log(f'Molecule loaded. ({round(time() - s, 2)}s)')
         return True, None
 
@@ -112,7 +113,6 @@ class Calculation:
         self._write_mmcif()
 
         self.logs.add_log(f'Partial atomic charges calculated. ({round(time() - s, 2)}s)')
-        #currently_running.remove(self.ID)
 
     def _write_txt(self):
         with open(f'{self.data_dir}/charges.txt', 'w') as chg_file:

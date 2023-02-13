@@ -116,15 +116,14 @@ class Molecule:
                        for ba1, ba2, bond_type in bonds]
 
         # control, whether molecule consist of standart aminoacids
-        atypic_atoms = []
+        problematic_atoms = []
         for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba, self.rdkit_mol.GetAtoms())):
             if atba not in real_ats_types:
-                atypic_atoms.append(f"{rdkit_at.GetPDBResidueInfo().GetResidueName()} "
-                                    f"{rdkit_at.GetPDBResidueInfo().GetResidueNumber()}"
-                                    f"{rdkit_at.GetPDBResidueInfo().GetName().rstrip()}")
-        if atypic_atoms:
-            print(', '.join(atypic_atoms))
-            raise ValueError(', '.join(atypic_atoms))
+                problematic_atoms.append(f"{rdkit_at.GetPDBResidueInfo().GetResidueName()} "
+                                         f"{rdkit_at.GetPDBResidueInfo().GetResidueNumber()}"
+                                         f"{rdkit_at.GetPDBResidueInfo().GetName().rstrip()}")
+        if problematic_atoms:
+            raise ValueError(', '.join(problematic_atoms))
 
 
         self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
