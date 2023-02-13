@@ -7,65 +7,19 @@ from datetime import datetime
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
 from src import SQEqp
 from src.molecule import Molecule
+from src.logs import Logs
+from src.input_validators import valid_pH, valid_prediction_version, valid_alphafold_request
 from random import random
+
 
 application = Flask(__name__)
 application.jinja_env.trim_blocks = True
 application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = str(random())
-
 root_dir = os.path.dirname(os.path.abspath(__file__))
-
 parameters_SQEqp, bond_hardnesses_SQEqp, parameters_SQEqps, bond_hardnesses_SQEqps = SQEqp.load_parameters(root_dir)
-
 currently_running = set()
 
-class Logs:
-    def __init__(self,
-                 data_dir: str,
-                 empirical_method: str):
-        self.data_dir = data_dir
-        self.step = 1
-        self.max_steps = 6 if empirical_method == 'SQEqp' else 7
-
-    def add_log(self,
-                log: str):
-        html_log = f'<p><strong> Step {self.step}/{self.max_steps}:</strong> {log}</p>\n'
-        previous_logs = open(f'{self.data_dir}/page_log.txt').readlines()
-        with open(f'{self.data_dir}/page_log.txt', 'w') as page_log_file:
-            if len(previous_logs) and '...' in previous_logs[-1]:
-                previous_logs = previous_logs[:-1]
-                self.step += 1
-            page_log_file.write(''.join(previous_logs) + html_log)
-
-
-def valid_pH(ph):
-    if ph is None:
-        return 7.0, True
-    try:
-        ph = float(ph)
-    except ValueError:
-        return ph, False
-    if not 0 <= ph <= 14:
-        return ph, False
-    return ph, True
-
-def valid_prediction_version(version):
-    if version is None:
-        return 4, True
-    try:
-        version = int(version)
-    except ValueError:
-        return version, False
-    if version not in (1,2,3,4):
-        return version, False
-    return version, True
-
-
-def valid_alphafold_request(code, alphafold_prediction_version):
-    # check whether UniProt code is valid, ping AlphaFold website
-    response = requests.head(f'https://alphafold.ebi.ac.uk/files/AF-{code}-F1-model_v{alphafold_prediction_version}.pdb')
-    return response.status_code == 200
 
 
 def is_calculated(ID):
