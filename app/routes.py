@@ -111,8 +111,8 @@ def calculation():
     calculation.precalculate_parameters()
     calculation.create_submolecules()
     calculation.calculate_charges()
-    return redirect(url_for('results/{ID}'))
-                            # ID=calculation.ID))
+    return redirect(url_for('results',
+                            ID=calculation.ID))
 
 @application.route('/wrong_structure')
 def wrong_structure():
@@ -136,8 +136,9 @@ def progress():
     return open(f'{data_dir}/page_log.txt', 'r').read()
 
 
-@application.route('/results/<ID>')
-def results(ID: str):
+@application.route('/results')
+def results():
+    ID = request.args.get('ID')
     try:
         code, ph, alphafold_prediction_version = ID.split('_')
     except:
