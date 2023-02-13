@@ -32,8 +32,8 @@ def sqeqp_calculate(bonds,
     initial_charges = precalc_params[:, 3]
     num_of_ats = len(coordinates)
     num_of_bonds = len(bonds)
-    T = np.zeros((num_of_bonds, num_of_ats), dtype=np.float64)
-    matrix = np.empty((num_of_ats, num_of_ats), dtype=np.float64)
+    T = np.zeros((num_of_bonds, num_of_ats), dtype=np.float32)
+    matrix = np.empty((num_of_ats, num_of_ats), dtype=np.float32)
     for i,(a1, a2, _) in enumerate(bonds):
         T[i, a1] += 1
         T[i, a2] -= 1
@@ -81,15 +81,15 @@ def precalculate_parameters_SQEqps(atomic_types, bonds_types, surfaces, paramete
 def precalculate_parameters_SQEqp(atomic_types, bonds_types, parameters, bond_hardnesses):
     n_atoms = len(atomic_types)
     n_bonds = len(bonds_types)
-    precalc_params = np.empty((n_atoms, 4), dtype=np.float64)
-    precalc_bond_hardnesses = np.empty(n_bonds, dtype=np.float64)
+    precalc_params = np.empty((n_atoms, 4), dtype=np.float32)
+    precalc_bond_hardnesses = np.empty(n_bonds, dtype=np.float32)
     for i in range(n_atoms):
         symbol_i = atomic_types[i]
         electronegativity, hardness, width, q0, = parameters[symbol_i]
         precalc_params[i] = np.array((-electronegativity,
                              hardness,
                              2 * width ** 2,
-                             q0), dtype=np.float64)
+                             q0), dtype=np.float32)
     for i in range(n_bonds):
         if bonds_types[i] not in bond_hardnesses:
             print(bonds_types[i])
@@ -105,7 +105,7 @@ def load_parameters(root_dir: str,
         for key, value in parameters_json["atom"]["data"].items():
             parameters[key] = np.array(value, dtype=np.float32)
         bond_hardnesses = Dict.empty(key_type=types.unicode_type,
-                                     value_type=types.float64)
+                                     value_type=types.float32)
         for key, value in parameters_json["bond"]["data"].items():
             bond_hardnesses[key] = value
 
@@ -116,7 +116,7 @@ def load_parameters(root_dir: str,
         for key, value in parameters_json["atom"]["data"].items():
             parameters[key] = np.array(value, dtype=np.float32)
         bond_hardnesses = Dict.empty(key_type=types.unicode_type,
-                                     value_type=types.float64)
+                                     value_type=types.float32)
         for key, value in parameters_json["bond"]["data"].items():
             bond_hardnesses[key] = value
 
