@@ -14,6 +14,9 @@ application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = str(random())
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
+# todo
+# faster create submolecules
+# better atomic types (also for average QM charges)
 
 def already_calculated(ID):
     path = f'{root_dir}/calculated_structures/{ID}'
@@ -139,6 +142,7 @@ def progress():
 @application.route('/results')
 def results():
     ID = request.args.get('ID')
+
     try:
         code, ph, alphafold_prediction_version = ID.split('_')
     except:
