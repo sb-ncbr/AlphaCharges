@@ -1,5 +1,4 @@
 import os
-import requests
 import zipfile
 from time import sleep, time
 from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify

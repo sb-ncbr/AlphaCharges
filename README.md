@@ -6,6 +6,8 @@
   <br>
 </div>
 
+[αCharges](https://alphacharges.ncbr.muni.cz/) is a web application for the calculation of partial atomic charges on protein structures predicted by the [AlphaFold2](https://www.nature.com/articles/s41586-021-03819-2) algorithm and deposited in the [AlphaFoldDB](https://academic.oup.com/nar/article/50/D1/D439/6430488) database. The charges are computed by the [SQE+qp](https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00528-w) empirical method, which quality is comparable to quantum mechanical charge calculation approaches. Before computation of the charges, αCharges protonates the input protein structures by [PROPKA3](https://pubs.acs.org/doi/full/10.1021/ct100578z). The details about the methodology and usage are described in the [wiki](https://github.com/sb-ncbr/AlphaCharges/wiki). This website is free and open to all users and there is no login requirement.
+
 ## How to run
 
 To run AlphaCharges locally, you will need to have [Python 3](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/) installed.
@@ -16,14 +18,6 @@ Then, install the project dependencies by running:
 $ sudo python -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
-```
-
-**BUG**: Before running the project you will need to copy over this file:
-
-```bash
-$ sudo mkdir -p /opt/venv/bin
-$ sudo cp ./venv/bin/pdb2pqr30 /opt/venv/bin/pdb2pqr30
-$ sudo chown -R $USER:$USER /opt/venv/bin/pdb2pqr30
 ```
 
 Run the project by running the following command inside the virtual environment:
