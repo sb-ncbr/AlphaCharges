@@ -23,7 +23,9 @@ $ pip install -r requirements.txt
 Run the project by running the following command inside the virtual environment:
 
 ```bash
-(venv) $ flask --app app/routes.py run
+(venv) $ cd /opt/Alphacharges/app
+(venv) $ export FLASK_APP=routes.py
+(venv) $ flask run
 ```
 and point your browser to localhost:5000/.
 
