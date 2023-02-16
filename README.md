@@ -19,7 +19,6 @@ $ sudo python -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
 ```
-
 Run the project by running the following command inside the virtual environment:
 
 ```bash
