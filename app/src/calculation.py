@@ -39,7 +39,7 @@ class Calculation:
     def protonate_structure(self):
         self.logs.add_log('Protonation of structure...')
         s = time()
-        os.system(f'../../venv/bin/pdb2pqr30 --log-level DEBUG --noopt --titration-state-method propka '
+        os.system(f'/opt/venv/bin/pdb2pqr30 --log-level DEBUG --noopt --titration-state-method propka '
                   f'--with-ph {self.ph} --pdb-output {self.pdb_file_with_hydrogens} {self.pdb_file} '
                   f'{self.pqr_file} > {self.data_dir}/propka.log 2>&1 ')
         self.logs.add_log(f'Structure protonated. ({round(time() - s, 2)}s)')

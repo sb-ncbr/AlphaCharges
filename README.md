@@ -15,6 +15,7 @@ To run AlphaCharges locally, you will need to have [Python 3](https://www.python
 Then, install the project dependencies by running:
 
 ```bash
+$ cd /opt
 $ sudo python -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
@@ -24,6 +25,7 @@ Run the project by running the following command inside the virtual environment:
 ```bash
 (venv) $ flask --app app/routes.py run
 ```
+and point your browser to localhost:5000/.
 
 ## License
 MIT
