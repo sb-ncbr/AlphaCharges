@@ -60,11 +60,13 @@ function mountTypeControls() {
 
 function mountColorControls() {
     const structure = document.getElementById("colors_structure");
+    const alphafold = document.getElementById("colors_alphafold");
     const relative = document.getElementById("colors_relative");
     const absolute = document.getElementById("colors_absolute");
     const range = document.getElementById("max_value");
-    if (!structure || !relative || !absolute) return;
+    if (!structure || !relative || !absolute || !alphafold) return;
     structure.onclick = async () => await updateDefaultColor();
+    alphafold.onclick = async () => await updateAlphaFoldColor();
     relative.onclick = async () => await updateRelativeColor();
     absolute.onclick = async () => await updateAbsoluteColor();
     range.oninput = async () => await updateRange();
@@ -75,6 +77,13 @@ async function updateDefaultColor() {
     if (!input) return;
     input.setAttribute("disabled", "true");
     await molstar.color.default();
+}
+
+async function updateAlphaFoldColor() {
+    const input = document.getElementById("max_value");
+    if (!input) return;
+    input.setAttribute("disabled", "true");
+    await molstar.color.alphaFold();
 }
 
 async function updateRelativeColor() {
