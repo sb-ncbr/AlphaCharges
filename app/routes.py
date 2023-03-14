@@ -124,13 +124,14 @@ def wrong_structure():
     ID = request.args.get('ID')
     code, ph, alphafold_prediction_version = ID.split('_')
     problematic_atoms=open(f'{root_dir}/calculated_structures/{ID}/problematic_atoms.txt', 'r').read()
-    message = Markup(f'There is an error with atoms <strong>{problematic_atoms}</strong>! '
-                      'The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.')
+    message = Markup('There is an error with atoms <span id="problematic_atoms"></span>!'
+                      ' The structure is probably incorrectly predicted by AlphaFold2, or incorrectly protonated by PROPKA3.')
     flash(message, 'danger')
     return render_template('wrong_structure.html',
                            ID=ID,
                            code=code,
                            ph=ph,
+                           problematic_atoms=problematic_atoms,
                            alphafold_prediction_version=alphafold_prediction_version)
 
 
