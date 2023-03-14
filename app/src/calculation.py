@@ -19,6 +19,7 @@ class Calculation:
         self.code, self.ph, self.alphafold_prediction_version = self.ID.split('_')
         self.data_dir = f'{self.root_dir}/calculated_structures/{self.ID}'
         self.pdb_file = f'{self.data_dir}/{self.code}.pdb' # original pdb from alphafold, without hydrogens
+        self.mmcif_file = f'{self.data_dir}/{self.code}.cif' # original mmCIF from alphafold, without hydrogens
         self.pdb_file_with_hydrogens = f'{self.data_dir}/{self.code}_added_H.pdb'
         self.pqr_file = f'{self.data_dir}/{self.code}.pqr'
         self.logs = Logs(data_dir=self.data_dir,
@@ -35,6 +36,12 @@ class Calculation:
         with open(f'{self.pdb_file}', 'w') as pdb_file:
             pdb_file.write(response.text)
         self.logs.add_log(f'Structure downloaded. ({round(time() - s, 2)}s)')
+
+    def download_mmCIF(self):
+        s = time()
+        response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v{self.alphafold_prediction_version}.cif')
+        with open(f'{self.mmcif_file}', 'w') as mmcif_file:
+            mmcif_file.write(response.text)
 
     def protonate_structure(self):
         self.logs.add_log('Protonation of structure...')
@@ -130,6 +137,26 @@ class Calculation:
         with open(self.pqr_file, 'w') as pqr_file:
             pqr_file.write(''.join(new_lines))
 
+    def _add_AF_confidence_score(self, write_block):
+        document = gemmi.cif.read(self.mmcif_file)
+        block = document.sole_block()
+
+        ma_qa_metric_prefix = '_ma_qa_metric'
+        ma_qa_metric_local_prefix = '_ma_qa_metric_local'
+        ma_qa_metric_global_prefix = '_ma_qa_metric_global'
+
+        categories = {
+            ma_qa_metric_prefix: block.get_mmcif_category(ma_qa_metric_prefix),
+            ma_qa_metric_local_prefix: block.get_mmcif_category(ma_qa_metric_local_prefix),
+            ma_qa_metric_global_prefix: block.get_mmcif_category(ma_qa_metric_global_prefix)
+        }
+
+        length = len(categories[ma_qa_metric_local_prefix]['label_asym_id'])
+        categories[ma_qa_metric_local_prefix]['label_asym_id'] = ['A-p'] * length
+
+        for name, data in categories.items():
+            write_block.set_mmcif_category(name, data)
+
     def _write_mmcif(self):
         input_file = self.pdb_file_with_hydrogens
         filename, _ = os.path.splitext(input_file)
@@ -158,4 +185,6 @@ class Calculation:
             charges_loop.add_row(["1",
                                   f"{atomId + 1}",
                                   f"{charge: .4f}"])
+
+        self._add_AF_confidence_score(block)
         block.write_file(output_file)
