@@ -3,6 +3,7 @@ import numpy as np
 from io import StringIO
 from multiprocessing import Pool
 from numba import jit
+from .problematic_atom_info import problematic_atom_info
 from numba.typed import List
 from rdkit import Chem
 from sklearn.neighbors import KDTree as kdtreen
@@ -116,12 +117,17 @@ class Molecule:
                        for ba1, ba2, bond_type in bonds]
 
         # control, whether molecule consist of standart aminoacids
+        # possible move whole control of atoms to own function
         problematic_atoms = []
-        for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba, self.rdkit_mol.GetAtoms())):
+        problematic_atoms_messages = []
+        for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba,
+                                                 self.rdkit_mol.GetAtoms())):
             if atba not in real_ats_types:
                 problematic_atoms.append(f"{rdkit_at.GetPDBResidueInfo().GetResidueName()} "
                                          f"{rdkit_at.GetPDBResidueInfo().GetResidueNumber()}"
                                          f"{rdkit_at.GetPDBResidueInfo().GetName().rstrip()}")
+                # problematic_atoms_messages.append(problematic_atom_info(rdkit_at)
+                problematic_atom_info(rdkit_at, atba, self.rdkit_mol)
         if problematic_atoms:
             raise ValueError(', '.join(problematic_atoms))
 
