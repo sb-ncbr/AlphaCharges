@@ -1,7 +1,7 @@
 {% extends 'base/base.html' %}
 
 {% block styles %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.7/dist/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.11/dist/style.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 {% endblock styles %}
 
@@ -59,10 +59,10 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.3/dist/jquery.min.js"></script>
 <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.7/dist/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.11/dist/molstar.umd.js"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>
 <script>
     const structure_url = '{{ url_for("get_structure", ID=ID, FORMAT="pdb") }}';
-    init_wrong_structure(structure_url, '{{ message }}');
+    init_wrong_structure(structure_url, '{{ problematic_atoms }}');
 </script>
 {% endblock scripts %}
