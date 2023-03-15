@@ -46,6 +46,8 @@ def main_site():
     if request.method == 'POST':
 
         code = request.form['code'].upper() # UniProt code, not case-sensitive
+        code = code.replace("AF-","").replace("-F1", "") # Also AlphaFold DB identifiers are supproted (e.g., AF-A8H2R3-F1)
+
         action = request.form['action']
 
         if action == 'settings':
