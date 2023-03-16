@@ -1,3 +1,4 @@
+import json
 import os
 import zipfile
 from time import sleep, time
@@ -22,10 +23,10 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 def already_calculated(ID):
     path = f'{root_dir}/calculated_structures/{ID}'
     if os.path.isdir(path):
-        if os.path.isfile(f'{path}/charges.txt') or os.path.isfile(f'{path}/problematic_atoms.txt'):
+        if os.path.isfile(f'{path}/charges.txt') or os.path.isfile(f'{path}/problematic_atoms.json'):
             return True
         elif time() - os.stat(path).st_mtime > 180:
-            # for case that results directory exists without results (charges.txt or problematic_atoms.txt)
+            # for case that results directory exists without results (charges.txt or problematic_atoms.json)
             # it means that something unexpected happen during calculation
             os.system(f'rm -r {root_dir}/calculated_structures/{ID}')
     return False
@@ -33,7 +34,7 @@ def already_calculated(ID):
 def is_running(ID):
     path = f'{root_dir}/calculated_structures/{ID}'
     if os.path.isdir(path):
-        if os.path.isfile(f'{path}/charges.txt') or os.path.isfile(f'{path}/problematic_atoms.txt'):
+        if os.path.isfile(f'{path}/charges.txt') or os.path.isfile(f'{path}/problematic_atoms.json'):
             return False
         elif time() - os.stat(path).st_mtime > 180:
             return False
@@ -125,7 +126,8 @@ def calculation():
 def wrong_structure():
     ID = request.args.get('ID')
     code, ph, alphafold_prediction_version = ID.split('_')
-    problematic_atoms=open(f'{root_dir}/calculated_structures/{ID}/problematic_atoms.txt', 'r').read()
+    problematic_atoms_file = open(f'{root_dir}/calculated_structures/{ID}/problematic_atoms.json', 'r')
+    problematic_atoms = json.load(problematic_atoms_file)
     message = Markup('There is a structural error with atoms <span id="problematic_atoms"></span>! Calculation of partial atomic charges is not possible.')
     flash(message, 'danger')
     return render_template('wrong_structure.html',
@@ -161,7 +163,7 @@ def results():
         flash(message, 'danger')
         return redirect(url_for('main_site'))
 
-    if os.path.isfile(f'{data_dir}/problematic_atoms.txt'):
+    if os.path.isfile(f'{data_dir}/problematic_atoms.json'):
         return redirect(url_for('wrong_structure',
                                 ID=ID))
 

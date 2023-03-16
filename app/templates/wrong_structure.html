@@ -63,6 +63,6 @@
 <script src="{{ url_for('static', filename='main.js') }}"></script>
 <script>
     const structure_url = '{{ url_for("get_structure", ID=ID, FORMAT="pdb") }}';
-    init_wrong_structure(structure_url, '{{ problematic_atoms }}');
+    init_wrong_structure(structure_url, '{{ problematic_atoms|tojson }}');
 </script>
 {% endblock scripts %}

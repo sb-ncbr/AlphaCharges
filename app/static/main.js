@@ -15,7 +15,7 @@ function init_results(structure_url, id) {
 }
 
 function init_wrong_structure(structure_url, problematicAtoms) {
-    const parsedAtoms = parseProblematicAtoms(problematicAtoms);
+    const parsedAtoms = JSON.parse(problematicAtoms);
     addProblematicAtoms(parsedAtoms);
 
     (async () => {
@@ -114,30 +114,16 @@ async function updateRange() {
     await molstar.color.absolute(value);
 }
 
-function parseProblematicAtoms(problematicAtoms) {
-    const parsedAtoms = problematicAtoms.split(", ").map((entry) => {
-        const atom = entry.split(" ");
-        return {
-            labelCompId: atom[0],
-            labelSeqId: Number(atom[1]),
-            labelAtomId: atom[2]
-        };
-    });
-    return parsedAtoms;
-}
-
 function addProblematicAtoms(problematicAtoms) {
     const div = document.getElementById("problematic_atoms");
     if (!div) return;
-    problematicAtoms.forEach((atom, i) => {
-        const { labelCompId, labelSeqId, labelAtomId } = atom;
-        const id = `${labelCompId} ${labelSeqId} ${labelAtomId}`;
-
+    Object.keys(problematicAtoms).forEach((id, i) => {
         // ? creates button for each problematic atom ?
         const button = document.createElement("button");
         button.id = id;
         button.className = "btn btn-link p-0";
-        button.onclick = async () => await molstar.visual.focus(atom);
+        button.onclick = async () =>
+            await molstar.visual.focus(problematicAtoms[id].key);
 
         // ? adds comma between buttons ?
         if (i !== 0) {

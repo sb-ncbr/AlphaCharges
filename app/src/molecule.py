@@ -118,18 +118,25 @@ class Molecule:
 
         # control, whether molecule consist of standart aminoacids
         # possible move whole control of atoms to own function
-        problematic_atoms = []
-        problematic_atoms_messages = []
+        problematic_atoms = {}
         for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba,
                                                  self.rdkit_mol.GetAtoms())):
             if atba not in real_ats_types:
-                problematic_atoms.append(f"{rdkit_at.GetPDBResidueInfo().GetResidueName()} "
-                                         f"{rdkit_at.GetPDBResidueInfo().GetResidueNumber()}"
-                                         f"{rdkit_at.GetPDBResidueInfo().GetName().rstrip()}")
-                # problematic_atoms_messages.append(problematic_atom_info(rdkit_at)
-                problematic_atom_info(rdkit_at, atba, self.rdkit_mol)
+                label_comp_id = f"{rdkit_at.GetPDBResidueInfo().GetResidueName()}"
+                label_seq_id = int(rdkit_at.GetPDBResidueInfo().GetResidueNumber())
+                label_atom_id = f"{rdkit_at.GetPDBResidueInfo().GetName().strip()}"
+                id = f"{label_comp_id} {label_seq_id} {label_atom_id}"
+                message = problematic_atom_info(rdkit_at, atba, self.rdkit_mol)
+                problematic_atoms[id] = {
+                    "key": {
+                        "labelCompId": label_comp_id,
+                        "labelSeqId": label_seq_id,
+                        "labelAtomId": label_atom_id,
+                    },
+                    "message": message,
+                }
         if problematic_atoms:
-            raise ValueError(', '.join(problematic_atoms))
+            raise ValueError(problematic_atoms)
 
 
         self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
