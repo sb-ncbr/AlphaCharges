@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from time import time
 import requests
+import json
 
 class Calculation:
     def __init__(self,
@@ -58,8 +59,8 @@ class Calculation:
             self.molecule = Molecule(self.pdb_file_with_hydrogens,
                                      self.pqr_file)
         except ValueError as error:
-            with open(f"{self.data_dir}/problematic_atoms.txt", "w") as problematic_atoms_file:
-                problematic_atoms_file.write(str(error))
+            with open(f"{self.data_dir}/problematic_atoms.json", "w") as problematic_atoms_file:
+                json.dump(error.args[0], problematic_atoms_file)
             return False, str(error)
         self.logs.add_log(f'Molecule loaded. ({round(time() - s, 2)}s)')
         return True, None
