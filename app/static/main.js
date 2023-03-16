@@ -115,26 +115,39 @@ async function updateRange() {
 }
 
 function addProblematicAtoms(problematicAtoms) {
-    const div = document.getElementById("problematic_atoms");
-    if (!div) return;
+    const span = document.getElementById("problematic_atoms");
+    if (!span) return;
     Object.keys(problematicAtoms).forEach((id, i) => {
-        // ? creates button for each problematic atom ?
-        const button = document.createElement("button");
-        button.id = id;
-        button.className = "btn btn-link p-0";
-        button.onclick = async () =>
-            await molstar.visual.focus(problematicAtoms[id].key);
-
-        // ? adds comma between buttons ?
-        if (i !== 0) {
+        const button = createProblematicAtomButton(
+            id,
+            problematicAtoms[id].key
+        );
+        const tooltip = createProblematicAtomTooltip(
+            problematicAtoms[id].message
+        );
+        span.appendChild(button);
+        span.appendChild(tooltip);
+        if (i < Object.keys(problematicAtoms).length - 1) {
             const text = document.createTextNode(", ");
-            div.appendChild(text);
+            span.appendChild(text);
         }
-
-        // ? create button text ?
-        const strong = document.createElement("strong");
-        strong.textContent = id;
-        button.appendChild(strong);
-        div.appendChild(button);
     });
+}
+
+function createProblematicAtomButton(id, key) {
+    const button = document.createElement("button");
+    button.id = id;
+    button.className = "btn btn-link p-0 font-weight-bold";
+    button.onclick = () => molstar.visual.focus(key);
+    button.textContent = id;
+    return button;
+}
+
+function createProblematicAtomTooltip(message) {
+    const tooltip = document.createElement("i");
+    tooltip.className = "bi bi-question-circle text-primary";
+    tooltip.setAttribute("data-toggle", "tooltip");
+    tooltip.setAttribute("data-placement", "top");
+    tooltip.setAttribute("title", message);
+    return tooltip;
 }
