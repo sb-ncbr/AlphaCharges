@@ -36,13 +36,10 @@ class Calculation:
         response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v{self.alphafold_prediction_version}.pdb')
         with open(f'{self.pdb_file}', 'w') as pdb_file:
             pdb_file.write(response.text)
-        self.logs.add_log(f'Structure downloaded. ({round(time() - s, 2)}s)')
-
-    def download_mmCIF(self):
-        s = time()
         response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v{self.alphafold_prediction_version}.cif')
         with open(f'{self.mmcif_file}', 'w') as mmcif_file:
             mmcif_file.write(response.text)
+        self.logs.add_log(f'Structure downloaded. ({round(time() - s, 2)}s)')
 
     def protonate_structure(self):
         self.logs.add_log('Protonation of structure...')

@@ -122,9 +122,10 @@ class Molecule:
         for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba,
                                                  self.rdkit_mol.GetAtoms())):
             if atba not in real_ats_types:
-                label_comp_id = f"{rdkit_at.GetPDBResidueInfo().GetResidueName()}"
-                label_seq_id = int(rdkit_at.GetPDBResidueInfo().GetResidueNumber())
-                label_atom_id = f"{rdkit_at.GetPDBResidueInfo().GetName().strip()}"
+                res_info = rdkit_at.GetPDBResidueInfo()
+                label_comp_id = f"{res_info.GetResidueName()}"
+                label_seq_id = int(res_info.GetResidueNumber())
+                label_atom_id = f"{res_info.GetName().strip()}"
                 id = f"{label_comp_id} {label_seq_id} {label_atom_id}"
                 message = problematic_atom_info(rdkit_at, atba, self.rdkit_mol)
                 problematic_atoms[id] = {

@@ -110,7 +110,6 @@ def calculation():
                               empirical_method,
                               root_dir)
     calculation.download_PDB()
-    calculation.download_mmCIF()
     calculation.protonate_structure()
     loaded, _ = calculation.load_molecule()
     if not loaded:

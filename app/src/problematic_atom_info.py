@@ -23,7 +23,7 @@ def problematic_atom_info(rdkit_at,
                 message += f"Hydrogen {clashed_hydrogen.GetPDBResidueInfo().GetResidueName()} {clashed_hydrogen.GetPDBResidueInfo().GetResidueNumber()}{clashed_hydrogen.GetPDBResidueInfo().GetName().rstrip()} is probably too close to this atom ({round(bond_length, 2)}Å). The problem occurs during protonation using the external tool pdb2pqr."
                 break
     else:
-        message += "This structure is probably wrongly predicted by AlphaFold2."
+        message += "This atom is probably wrongly predicted by AlphaFold2."
 
     print(message)
     return message
