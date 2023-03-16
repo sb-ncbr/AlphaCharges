@@ -151,8 +151,10 @@ class Calculation:
             ma_qa_metric_global_prefix: block.get_mmcif_category(ma_qa_metric_global_prefix)
         }
 
+        asym_id = write_block.get_mmcif_category('_struct_asym').get('id')[0]
+
         length = len(categories[ma_qa_metric_local_prefix]['label_asym_id'])
-        categories[ma_qa_metric_local_prefix]['label_asym_id'] = ['A-p'] * length
+        categories[ma_qa_metric_local_prefix]['label_asym_id'] = [asym_id] * length
 
         for name, data in categories.items():
             write_block.set_mmcif_category(name, data)
