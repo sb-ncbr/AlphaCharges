@@ -145,7 +145,7 @@ function createProblematicAtomButton(id, key) {
 
 function createProblematicAtomTooltip(message) {
     const tooltip = document.createElement("i");
-    tooltip.className = "bi bi-question-circle text-primary";
+    tooltip.className = "bi bi-question";
     tooltip.setAttribute("data-toggle", "tooltip");
     tooltip.setAttribute("data-placement", "top");
     tooltip.setAttribute("title", message);
