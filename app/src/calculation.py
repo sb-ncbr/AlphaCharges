@@ -1,12 +1,15 @@
-import gemmi
-from . import SQEqp
-from .molecule import Molecule
-from .logs import Logs
+import json
 import os
 from datetime import datetime
 from time import time
+
+import gemmi
 import requests
-import json
+
+from . import SQEqp
+from .logs import Logs
+from .molecule import Molecule
+
 
 class Calculation:
     def __init__(self,
@@ -23,8 +26,7 @@ class Calculation:
         self.mmcif_file = f'{self.data_dir}/{self.code}.cif' # original mmCIF from alphafold, without hydrogens
         self.pdb_file_with_hydrogens = f'{self.data_dir}/{self.code}_added_H.pdb'
         self.pqr_file = f'{self.data_dir}/{self.code}.pqr'
-        self.logs = Logs(data_dir=self.data_dir,
-                         empirical_method=self.empirical_method)
+        self.logs = Logs(data_dir=self.data_dir, empirical_method=self.empirical_method)
         os.mkdir(self.data_dir)
         os.mknod(f'{self.data_dir}/page_log.txt')
         with open(f'{self.root_dir}/calculated_structures/logs.txt', 'a') as log_file:
@@ -63,33 +65,16 @@ class Calculation:
         return True, None
 
     def precalculate_parameters(self):
-        parameters, bond_hardnesses = SQEqp.load_parameters(self.root_dir,
-                                                            self.empirical_method)
-        if self.empirical_method == 'SQEqp':
-            self.logs.add_log('Assigning parameters...')
-            s = time()
-            self.molecule.precalc_params,\
-                self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqp(self.molecule.ats_srepr,
-                                                                                            self.molecule.bonds_srepr,
-                                                                                            parameters,
-                                                                                            bond_hardnesses)
-            self.logs.add_log(f'Parameters assigned. ({round(time() - s, 2)}s)')
+        parameters, bond_hardnesses = SQEqp.load_parameters(self.root_dir, self.empirical_method)
+        self.logs.add_log('Assigning parameters...')
+        s = time()
+        self.molecule.precalc_params,\
+            self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqp(self.molecule.ats_srepr,
+                                                                                        self.molecule.bonds_srepr,
+                                                                                        parameters,
+                                                                                        bond_hardnesses)
+        self.logs.add_log(f'Parameters assigned. ({round(time() - s, 2)}s)')
 
-        elif self.empirical_method == 'SQEqps':
-            self.logs.add_log('Calculation of solvatable surface...')
-            s = time()
-            self.molecule.calculate_surfaces(cpu=1)
-            self.logs.add_log(f'Solvatable surface calculated. ({round(time() - s, 2)}s)')
-
-            self.logs.add_log('Precalculate parameters...')
-            s = time()
-            self.molecule.precalc_params, \
-                self.molecule.precalc_bond_hardnesses = SQEqp.precalculate_parameters_SQEqps(self.molecule.ats_srepr,
-                                                                                             self.molecule.bonds_srepr,
-                                                                                             self.molecule.surfaces,
-                                                                                             parameters,
-                                                                                             bond_hardnesses)
-            self.logs.add_log(f'Parameters precalculated. ({round(time() - s, 2)}s)')
 
     def create_submolecules(self):
         self.logs.add_log('Creation of submolecules...')
@@ -100,16 +85,10 @@ class Calculation:
     def calculate_charges(self):
         self.logs.add_log('Calculation of partial atomic charges...')
         s = time()
-
-        # calculation of charges
-        # with Pool(n_cpu) as p:
-        #    all_charges = p.map(calculate_charges, [substructure for substructure in molecule.substructures])
-        # all_charges = [chg for chgs in all_charges for chg in chgs]
         all_charges = []
         for substructure in self.molecule.substructures:
             all_charges.extend(SQEqp.calculate_charges(substructure))
-        all_charges -= (sum(all_charges) - self.molecule.total_chg) / len(all_charges)
-        self.charges = all_charges
+        self.charges -= (sum(all_charges) - self.molecule.total_chg) / len(all_charges)
 
         # write charges to files
         self._write_txt()

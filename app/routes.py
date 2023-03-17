@@ -1,12 +1,13 @@
 import json
 import os
 import zipfile
-from time import sleep, time
-from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
-from src.input_validators import valid_pH, valid_prediction_version, valid_alphafold_request
-from src.calculation import Calculation
 from random import random
+from time import sleep, time
 
+from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
+
+from src.calculation import Calculation
+from src.input_validators import valid_pH, valid_prediction_version, valid_alphafold_request
 
 application = Flask(__name__)
 application.jinja_env.trim_blocks = True
@@ -14,12 +15,6 @@ application.jinja_env.lstrip_blocks = True
 application.config['SECRET_KEY'] = str(random())
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
-# todo
-# faster create submolecules
-# better atomic types (also for average QM charges)
-# pdb2pqr to library
-# logy do  /var/log/AlphaCharges/computations.log.
-# vypočítané struktury do /var/cache/AlphaCharges
 
 def already_calculated(ID):
     path = f'{root_dir}/calculated_structures/{ID}'
@@ -31,6 +26,7 @@ def already_calculated(ID):
             # it means that something unexpected happen during calculation
             os.system(f'rm -r {root_dir}/calculated_structures/{ID}')
     return False
+
 
 def is_running(ID):
     path = f'{root_dir}/calculated_structures/{ID}'
@@ -44,22 +40,16 @@ def is_running(ID):
 
 @application.route('/', methods=['GET', 'POST'])
 def main_site():
-
     if request.method == 'POST':
-
         code = request.form['code'].upper() # UniProt code, not case-sensitive
         code = code.replace("AF-","").replace("-F1", "") # Also AlphaFold DB identifiers are supproted (e.g., AF-A8H2R3-F1)
 
-        action = request.form['action']
-
-        if action == 'settings':
+        if request.form['action'] == 'settings':
             return render_template('settings.html',
                                    code=code)
 
-        elif action == 'calculate charges':
-
-            ph = request.form['ph']
-            alphafold_prediction_version = request.form['prediction_version']
+        elif request.form['action'] == 'calculate charges':
+            ph, alphafold_prediction_version = request.form['ph'], request.form['prediction_version']
 
             ph, is_ph_valid = valid_pH(ph)
             if not is_ph_valid:
@@ -97,10 +87,7 @@ def main_site():
                                    alphafold_prediction_version=alphafold_prediction_version,
                                    code=code,
                                    ph=ph)
-
-    else:
         return render_template('index.html')
-
 
 
 @application.route('/calculation', methods=['POST'])
@@ -114,13 +101,12 @@ def calculation():
     calculation.protonate_structure()
     loaded, _ = calculation.load_molecule()
     if not loaded:
-        return redirect(url_for('wrong_structure',
-                                ID=calculation.ID))
+        return redirect(url_for('wrong_structure', ID=calculation.ID))
     calculation.precalculate_parameters()
     calculation.create_submolecules()
     calculation.calculate_charges()
-    return redirect(url_for('results',
-                            ID=calculation.ID))
+    return redirect(url_for('results', ID=calculation.ID))
+
 
 @application.route('/wrong_structure')
 def wrong_structure():
@@ -140,8 +126,7 @@ def wrong_structure():
 
 @application.route('/progress')
 def progress():
-    ID = request.args.get('ID')
-    data_dir = f'{root_dir}/calculated_structures/{ID}'
+    data_dir = f'{root_dir}/calculated_structures/{request.args.get("ID")}'
     return open(f'{data_dir}/page_log.txt', 'r').read()
 
 
@@ -222,8 +207,6 @@ def calculate_charges(code: str):
         message_dict.update({'status': 'failed',
                              'error message': 'Only URL arguments "ph" and "alphafold_prediction_version" are allowed.'})
         return jsonify(message_dict), 400
-
-
 
     ph, is_ph_valid = valid_pH(request.args.get('ph'))
     message_dict['pH'] = ph

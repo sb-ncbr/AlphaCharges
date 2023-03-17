@@ -1,22 +1,19 @@
-import sys
 import numpy as np
-from io import StringIO
-from multiprocessing import Pool
-from numba import jit
-from .problematic_atom_info import problematic_atom_info
 from numba.typed import List
 from rdkit import Chem
 from sklearn.neighbors import KDTree as kdtreen
+
+from .amino_acids_atomic_types import real_ats_types
 from .amino_acids_radii import amk_radius
 from .mean_qm_charges import mean_qm_charges
-from .amino_acids_atomic_types import real_ats_types
+from .problematic_atom_info import problematic_atom_info
+
 
 class Substructure:
     def __init__(self,
                  residues: list):
         self.residues = residues
         self.calculated_atoms = len(residues[0].coordinates)
-        #self.surfaces = np.concatenate([res.surfaces for res in residues])
         self.coordinates = np.concatenate([res.coordinates for res in residues], axis=0)
         self.precalc_params = np.concatenate([res.precalc_params for res in residues], axis=0)
         self.total_chg = sum(chg for res in residues for chg in res.mean_qm_chgs)
@@ -52,7 +49,6 @@ class Residue:
                  name: str,
                  number: int,
                  coordinates: np.array,
-                 #surfaces: np.array,
                  mean_qm_chgs: np.array,
                  indices: np.array,
                  precalc_params: np.array):
@@ -61,7 +57,6 @@ class Residue:
         self.number = number
         self.coordinates = coordinates
         self.coordinates_mean = np.mean(self.coordinates, axis=0)
-        #self.surfaces = surfaces
         self.mean_qm_chgs = mean_qm_chgs
         self.indices = indices
         self.precalc_params = precalc_params
@@ -77,16 +72,9 @@ class Molecule:
                                open(pqr_file, "r").readlines()[:-2]))
 
         # load molecule by rdkit
-        #Chem.WrapLogs()
-        #terminal_stdout = sys.stderr
-        #sio = sys.stderr = StringIO()
         self.rdkit_mol = Chem.MolFromPDBFile(pdb_file,
                                              removeHs=False,
                                              sanitize=False)
-        #if self.rdkit_mol is None:
-        #    print(sio.getvalue().split())
-        #    raise ValueError(f"{sio.getvalue().split()[6]}")
-        # sys.stderr = terminal_stdout
 
         # load atoms and bonds
         self.symbols = [atom.GetSymbol() for atom in self.rdkit_mol.GetAtoms()]
@@ -117,7 +105,6 @@ class Molecule:
                        for ba1, ba2, bond_type in bonds]
 
         # control, whether molecule consist of standart aminoacids
-        # possible move whole control of atoms to own function
         problematic_atoms = {}
         for i, (atba, rdkit_at) in enumerate(zip(ats_sreprba,
                                                  self.rdkit_mol.GetAtoms())):
@@ -139,7 +126,6 @@ class Molecule:
         if problematic_atoms:
             raise ValueError(problematic_atoms)
 
-
         self.mean_qm_chgs = [mean_qm_charges[ats_srepr] for ats_srepr in ats_sreprba]
 
         # convert to numba data structure
@@ -154,16 +140,6 @@ class Molecule:
         return [f"{symbol}/{''.join(sorted(bonded_ats))}"
                 for symbol, bonded_ats in zip(self.symbols, bonded_ats)]
 
-
-    # # for sqeqps
-    # def calculate_surfaces(self, cpu) -> np.array:
-    #     num_pts = 1000
-    #     kdtree = kdtreen(self.coordinates, leaf_size=40)
-    #     with Pool(cpu) as p:
-    #         surfaces = p.starmap(f2, [[index, at, self.coordinates, self.symbols, kdtree, num_pts] for index, at in enumerate(self.symbols)])
-    #     self.surfaces = np.array(surfaces)
-
-
     def create_submolecules(self):
         # create residues
         self.residues = []
@@ -176,7 +152,6 @@ class Molecule:
                 self.residues.append(Residue(residues_names[start_index],
                                              number-1,
                                              self.coordinates[start_index: i],
-                                             #self.surfaces[start_index: i],
                                              self.mean_qm_chgs[start_index: i],
                                              [x for x in range(start_index, i)],
                                              self.precalc_params[start_index: i]))
@@ -187,7 +162,6 @@ class Molecule:
         self.residues.append(Residue(residues_names[start_index],
                                      number-1,
                                      self.coordinates[start_index: ],
-                                     #self.surfaces[start_index: ],
                                      self.mean_qm_chgs[start_index: ],
                                      [x for x in range(start_index, self.n_ats)],
                                      self.precalc_params[start_index: ]))
@@ -232,43 +206,3 @@ class Molecule:
                 if d < amk_radius[res.name] + amk_radius[self.residues[i].name] + 5:
                     residues.append(self.residues[i])
             self.substructures.append(Substructure(residues))
-
-
-
-# # for SQEqps
-# @jit(nopython=True, cache=True)
-# def find_overlapping_points(grid, c, d):
-#     indices_to_remove = []
-#     e, f, g = c
-#     for gi, (a, b, c) in enumerate(grid):
-#         if np.sqrt((a - e) ** 2 + (b - f) ** 2 + (c - g) ** 2) < d:
-#             indices_to_remove.append(gi)
-#     return indices_to_remove
-#
-#
-# @jit(nopython=True, cache=True)
-# def fibonacci_sphere(xc, yc, zc, radius, num_pts):
-#     indices = np.arange(0, num_pts, dtype=np.float32) + 0.5
-#     phi = np.arccos(1 - 2 * indices / num_pts)
-#     theta = np.pi * (1 + 5 ** 0.5) * indices
-#     x, y, z = np.cos(theta) * np.sin(phi) * radius, np.sin(theta) * np.sin(phi) * radius, np.cos(phi) * radius
-#     return np.column_stack((x + xc, y + yc, z + zc))
-#
-#
-#
-# def f2(index, at, coordinates, symbols, kdtree, num_pts):
-#     vdw = {"H": 1.17183574,
-#            "C": 1.74471729,
-#            "N": 1.59013069,
-#            "O": 1.46105651,
-#            "S": 1.84999765}
-#     grid = fibonacci_sphere(*coordinates[index], vdw[at[0]], num_pts)
-#     distances, indices = kdtree.query([coordinates[index]], k=30)
-#     distances = distances[0][1:]
-#     indices = indices[0][1:]
-#     atom_radius = vdw[symbols[index]]
-#     for i, index_near in enumerate(indices):
-#         near_atom_radius = vdw[symbols[index_near]]
-#         if distances[i] < atom_radius + near_atom_radius:
-#             grid = np.delete(grid, find_overlapping_points(grid, coordinates[index_near], near_atom_radius), 0)
-#     return len(grid)/num_pts
