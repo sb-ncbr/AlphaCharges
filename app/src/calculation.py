@@ -85,10 +85,10 @@ class Calculation:
     def calculate_charges(self):
         self.logs.add_log('Calculation of partial atomic charges...')
         s = time()
-        all_charges = []
+        self.charges = []
         for substructure in self.molecule.substructures:
-            all_charges.extend(SQEqp.calculate_charges(substructure))
-        self.charges -= (sum(all_charges) - self.molecule.total_chg) / len(all_charges)
+            self.charges.extend(SQEqp.calculate_charges(substructure))
+        self.charges -= (sum(self.charges) - self.molecule.total_chg) / len(self.charges)
 
         # write charges to files
         self._write_txt()

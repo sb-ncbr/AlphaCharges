@@ -87,7 +87,7 @@ def main_site():
                                    alphafold_prediction_version=alphafold_prediction_version,
                                    code=code,
                                    ph=ph)
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 @application.route('/calculation', methods=['POST'])
