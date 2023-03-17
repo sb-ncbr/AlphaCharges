@@ -41,7 +41,7 @@ def is_running(ID):
 @application.route('/', methods=['GET', 'POST'])
 def main_site():
     if request.method == 'POST':
-        code = request.form['code'].upper() # UniProt code, not case-sensitive
+        code = request.form['code'].strip().upper() # UniProt code, not case-sensitive
         code = code.replace("AF-","").replace("-F1", "") # Also AlphaFold DB identifiers are supproted (e.g., AF-A8H2R3-F1)
 
         if request.form['action'] == 'settings':
