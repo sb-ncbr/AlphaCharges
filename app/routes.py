@@ -74,10 +74,11 @@ def main_site():
                                         ID=ID))
 
             if not valid_alphafold_request(code, alphafold_prediction_version):
-                message = Markup(f'The structure with UniProt code <strong>{code}</strong> in prediction version <strong>{alphafold_prediction_version}</strong> '
-                      f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
+                message = Markup(f'The structure with code <strong>{code}</strong> in prediction version <strong>{alphafold_prediction_version}</strong> '
+                      f'is either not found in AlphaFoldDB or the code is entered in the wrong format. '
                       f'UniProt code is allowed only in its short form (e.g., A0A1P8BEE7, B7ZW16). '
-                      f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.')
+                      f'Other notations (e.g., A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported. '
+                      f'An alternative option is AlpfaFold DB Identifier (e.g., AF-L8BU87-F1).')
                 flash(message, 'warning')
                 return render_template('index.html')
 
