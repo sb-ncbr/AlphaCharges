@@ -17,8 +17,9 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 # todo
 # faster create submolecules
 # better atomic types (also for average QM charges)
-# cofidence coloring
 # pdb2pqr to library
+# logy do  /var/log/AlphaCharges/computations.log.
+# vypočítané struktury do /var/cache/AlphaCharges
 
 def already_calculated(ID):
     path = f'{root_dir}/calculated_structures/{ID}'
