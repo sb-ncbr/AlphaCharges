@@ -145,21 +145,21 @@ class Calculation:
         structure.assign_label_seq_id()
         block = structure.make_mmcif_block()
         block.find_mmcif_category('_chem_comp.').erase() # remove pesky _chem_comp category >:(
-        partial_atomic_charges_meta_prefix = "_partial_atomic_charges_meta."
-        partial_atomic_charges_meta_attributes = ["id",
+        sb_ncbr_partial_atomic_charges_meta_prefix = "_sb_ncbr_partial_atomic_charges_meta."
+        sb_ncbr_partial_atomic_charges_meta_attributes = ["id",
                                                   "type",
                                                   "method"]
-        metadata_loop = block.init_loop(partial_atomic_charges_meta_prefix,
-                                        partial_atomic_charges_meta_attributes)
+        metadata_loop = block.init_loop(sb_ncbr_partial_atomic_charges_meta_prefix,
+                                        sb_ncbr_partial_atomic_charges_meta_attributes)
         metadata_loop.add_row(['1',
                                "'empirical'",
                                "'SQE+qp/Schindler 2021 (PUB_pept)'"])
-        partial_atomic_charges_prefix = "_partial_atomic_charges."
-        partial_atomic_charges_attributes = ["type_id",
+        sb_ncbr_partial_atomic_charges_prefix = "_sb_ncbr_partial_atomic_charges."
+        sb_ncbr_partial_atomic_charges_attributes = ["type_id",
                                              "atom_id",
                                              "charge"]
-        charges_loop = block.init_loop(partial_atomic_charges_prefix,
-                                       partial_atomic_charges_attributes)
+        charges_loop = block.init_loop(sb_ncbr_partial_atomic_charges_prefix,
+                                       sb_ncbr_partial_atomic_charges_attributes)
         for atomId, charge in enumerate(self.charges):
             charges_loop.add_row(["1",
                                   f"{atomId + 1}",
