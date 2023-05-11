@@ -29,5 +29,9 @@ Run the project by running the following command inside the virtual environment:
 ```
 and point your browser to localhost:5000/.
 
+## How to cite
+
+If you found AlphaCharges helpful, please cite: [Schindler, O., Berka, K., Cantara, A., Křenek, A., Tichý, D., Raček, T., & Svobodová, R. (2023). αCharges: Partial atomic charges for AlphaFold structures in high quality. Nucleic Acids Research.](https://doi.org/10.1093/nar/gkad349)
+
 ## License
 MIT
