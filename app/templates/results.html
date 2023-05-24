@@ -3,7 +3,7 @@
 {% block title %} αCharges – Calculation results {% endblock title %}
 
 {% block styles %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.10/dist/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar-partial-charges@1.2.0/dist/style.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 {% endblock styles %}
 
@@ -82,16 +82,17 @@
                         <label class="form-check-label" for="colors_absolute">Charges (absolute)</label>
                     </div>
                     <div class="form-group form-inline mb-0">
-                        <label class="col-sm-6 col-lg-3 col-form-label" for="max_value">Max value:</label>
-                        <input class="col-sm-6 col-lg-3 form-control" type="number" id="max_value" name="max_value"
-                            min="0" max="5" step="0.1" value="0" disabled>
+                        <label class="col-auto col-form-label pl-0 pr-3" for="max_value">Max value:</label>
+                        <input class="col-3 form-control" type="number" id="max_value" name="max_value" min="0" max="5"
+                            step="0.1" value="0" disabled>
+                        <a class="btn btn-secondary text-sm text-white" id="reset_max_charge">Reset</a>
                     </div>
                 </div>
             </fieldset>
         </div>
     </div>
     <hr>
-    <div class="row">
+    <div class="row px-3">
         <div class="col">
             <div id="root"></div>
         </div>
@@ -111,7 +112,7 @@
 </div>
 {% endblock body %}
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@0.0.10/dist/molstar.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/molstar-partial-charges@1.2.0/dist/molstar.umd.js"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>
 <script>
     const structure_url = '{{ url_for("get_structure", ID=ID, FORMAT="cif") }}';

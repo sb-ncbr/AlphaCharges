@@ -4,7 +4,10 @@ let molstar;
 
 function init_results(structure_url, id) {
     (async () => {
-        molstar = await MolstarPartialCharges.create("root");
+        molstar = await MolstarPartialCharges.create("root", {
+            SbNcbrPartialCharges: true,
+            MAQualityAssessment: true
+        });
         await load(structure_url, id);
     })().then(
         () => {},
@@ -19,10 +22,11 @@ function init_wrong_structure(structure_url, problematicAtoms) {
     addProblematicAtoms(parsedAtoms);
 
     (async () => {
-        molstar = await MolstarPartialCharges.create("root");
-        await molstar.load(structure_url, "pdb");
-        await molstar.type.ballAndStick();
-        await molstar.color.default();
+        molstar = await MolstarPartialCharges.create("root", {
+            SbNcbrPartialCharges: false,
+            MAQualityAssessment: false
+        });
+        await loadWrongStructure(structure_url);
     })().then(
         () => {},
         (error) => {
@@ -34,7 +38,7 @@ function init_wrong_structure(structure_url, problematicAtoms) {
 async function load(structure_url, id) {
     const first_example = "P34712_7.2_4";
 
-    await molstar.load(structure_url);
+    await molstar.load(structure_url, "mmcif", "AlphaCharges");
 
     if (id === first_example) {
         document.getElementById("view_surface").setAttribute("checked", "true");
@@ -46,9 +50,16 @@ async function load(structure_url, id) {
         await molstar.type.default();
     }
 
+    resetRange();
     updateRelativeColor();
     mountTypeControls();
     mountColorControls();
+}
+
+async function loadWrongStructure(structure_url) {
+    await molstar.load(structure_url, "pdb", "AlphaCharges");
+    await molstar.type.ballAndStick();
+    await molstar.color.default();
 }
 
 function mountTypeControls() {
@@ -67,12 +78,24 @@ function mountColorControls() {
     const relative = document.getElementById("colors_relative");
     const absolute = document.getElementById("colors_absolute");
     const range = document.getElementById("max_value");
-    if (!structure || !relative || !absolute || !alphafold) return;
+    const reset = document.getElementById("reset_max_charge");
+    if (
+        !structure ||
+        !relative ||
+        !absolute ||
+        !alphafold ||
+        !range ||
+        !reset
+    ) {
+        console.error("Color controls not found");
+        return;
+    }
     structure.onclick = async () => await updateDefaultColor();
     alphafold.onclick = async () => await updateAlphaFoldColor();
     relative.onclick = async () => await updateRelativeColor();
     absolute.onclick = async () => await updateAbsoluteColor();
     range.oninput = async () => await updateRange();
+    reset.onclick = async () => await resetRange();
 }
 
 async function updateDefaultColor() {
@@ -89,29 +112,50 @@ async function updateAlphaFoldColor() {
     await molstar.color.alphaFold();
 }
 
+async function resetRange() {
+    const input = document.getElementById("max_value");
+    if (!input) {
+        console.error("Max value input not found");
+        return;
+    }
+    const maxCharge = molstar.charges.getMaxCharge();
+    input.value = maxCharge;
+    if (!input.hasAttribute("disabled")) {
+        await updateRange();
+    }
+}
+
 async function updateRelativeColor() {
     const input = document.getElementById("max_value");
-    if (!input) return;
+    if (!input) {
+        console.error("Max value input not found");
+        return;
+    }
     input.setAttribute("disabled", "true");
-    const charge = await molstar.charges.getRelativeCharge();
-    input.value = charge.toFixed(3);
-    // ? updates viewer each time the radio button is clicked ?
     await molstar.color.relative();
 }
 
 async function updateAbsoluteColor() {
     const input = document.getElementById("max_value");
-    if (!input) return;
+    if (!input) {
+        console.error("Max value input not found");
+        return;
+    }
     input.removeAttribute("disabled");
-    await molstar.color.relative();
+    await updateRange();
 }
 
 async function updateRange() {
     const input = document.getElementById("max_value");
-    if (!input) return;
+    if (!input) {
+        console.error("Max value input not found");
+        return;
+    }
     const value = Number(input.value);
+    const min = Number(input.min);
     if (isNaN(value)) return;
-    await molstar.color.absolute(value);
+    if (value < min) input.value = min;
+    await molstar.color.absolute(input.value);
 }
 
 function addProblematicAtoms(problematicAtoms) {

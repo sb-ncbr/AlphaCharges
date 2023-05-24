@@ -10,13 +10,14 @@
 
 ## How to run
 
-To run AlphaCharges locally, you will need to have [Python 3](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/) installed.
+To run AlphaCharges locally, you will need to have [Python 3.9](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/) installed.
 
-Then, install the project dependencies by running:
+Then, clone project and install the project dependencies by running:
 
 ```bash
 $ cd /opt
-$ sudo python -m venv venv
+$ git clone https://github.com/sb-ncbr/AlphaCharges
+$ sudo python3.9 -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
 ```
@@ -28,6 +29,10 @@ Run the project by running the following command inside the virtual environment:
 (venv) $ flask run
 ```
 and point your browser to localhost:5000/.
+
+## How to cite
+
+If you found AlphaCharges helpful, please cite: [Schindler, O., Berka, K., Cantara, A., Křenek, A., Tichý, D., Raček, T., & Svobodová, R. (2023). αCharges: Partial atomic charges for AlphaFold structures in high quality. Nucleic Acids Research.](https://doi.org/10.1093/nar/gkad349)
 
 ## License
 MIT
