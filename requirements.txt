@@ -13,9 +13,9 @@ MarkupSafe==2.1.2
 mmcif-pdbx==2.0.1
 numba==0.56.4
 numpy==1.23.5
-pdb2pqr==3.5.2
+pdb2pqr==3.6.1
 Pillow==9.4.0
-propka==3.4.0
+propka==3.5.0
 rdkit==2022.3.5
 requests==2.28.2
 scikit-learn==1.2.1
