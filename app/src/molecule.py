@@ -68,8 +68,7 @@ class Molecule:
                  pqr_file: str):
 
         # load charges from propka, sum of charges are used as total charge of molecule
-        self.total_chg = round(sum(float(line.split()[8]) for line in
-                               open(pqr_file, "r").readlines()[:-2]))
+        self.total_chg = round(sum(float(line[55:62]) for line in open(pqr_file, "r").readlines()[:-2]))
 
         # load molecule by rdkit
         self.rdkit_mol = Chem.MolFromPDBFile(pdb_file,
