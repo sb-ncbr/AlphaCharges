@@ -2,7 +2,7 @@
 
 let molstar;
 
-function init_results(structure_url, id, residueStart, residueEnd) {
+function init_results(structure_url, id) {
   (async () => {
     molstar = await MolstarPartialCharges.create("root", {
       SbNcbrPartialCharges: true,
@@ -68,9 +68,24 @@ function mountTypeControls() {
   const surface = document.getElementById("view_surface");
   const bas = document.getElementById("view_bas");
   if (!cartoon || !surface || !bas) return;
-  cartoon.onclick = async () => await molstar.type.default();
-  surface.onclick = async () => await molstar.type.surface();
-  bas.onclick = async () => await molstar.type.ballAndStick();
+  cartoon.onclick = async () => await updateDefaultType();
+  surface.onclick = async () => await updateSurfaceType();
+  bas.onclick = async () => await updateBallAndStickType();
+}
+
+async function updateDefaultType() {
+  await molstar.type.default();
+  focusRange();
+}
+
+async function updateSurfaceType() {
+  await molstar.type.surface();
+  focusRange();
+}
+
+async function updateBallAndStickType() {
+  await molstar.type.ballAndStick();
+  focusRange();
 }
 
 function mountColorControls() {
@@ -197,7 +212,7 @@ function createProblematicAtomTooltip(message) {
   return tooltip;
 }
 
-function focusRange(residueStart, residueEnd) {
+function focusRange() {
   if (residueStart !== "None" && residueEnd !== "None")
     molstar.behavior.focusRange({
       residueStart: residueStart,
