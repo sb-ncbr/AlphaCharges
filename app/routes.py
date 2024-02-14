@@ -134,6 +134,8 @@ def progress():
 @application.route('/results')
 def results():
     ID = request.args.get('ID')
+    residue_start = request.args.get('residue_start')
+    residue_end = request.args.get('residue_end')
 
     try:
         code, ph, alphafold_prediction_version = ID.split('_')
@@ -162,7 +164,10 @@ def results():
                            code=code,
                            n_ats=n_ats,
                            ph=ph,
-                           alphafold_prediction_version=alphafold_prediction_version)
+                           alphafold_prediction_version=alphafold_prediction_version,
+                           residue_start=residue_start,
+                           residue_end=residue_end
+                           )
 
 
 @application.route('/download_files_for_wrong_structure')
