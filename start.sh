@@ -16,7 +16,7 @@ pip install -r AlphaCharges/requirements.txt
 
 # setup web server
 sudo rm -f /etc/apache2/sites-available/*
-sudo cp AlphaCharges/AlphaCharges.conf /etc/apache2/sites-available/
+#sudo cp AlphaCharges/AlphaCharges.conf /etc/apache2/sites-available/
 sudo chown -R www-data:www-data /opt
 sudo chmod o+rx AlphaCharges/app/AlphaCharges.wsgi
 sudo chmod o+rx AlphaCharges/app/routes.py

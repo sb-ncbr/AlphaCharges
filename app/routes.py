@@ -4,7 +4,8 @@ import zipfile
 from random import random
 from time import sleep, time
 
-from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, Markup, jsonify
+from markupsafe import Markup
+from flask import render_template, flash, request, send_from_directory, redirect, url_for, Response, Flask, jsonify
 
 from src.calculation import Calculation
 from src.input_validators import valid_pH, valid_prediction_version, valid_alphafold_request
