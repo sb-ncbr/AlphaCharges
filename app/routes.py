@@ -50,7 +50,7 @@ def main_site():
                                    code=code)
 
         elif request.form['action'] == 'calculate charges':
-            ph, alphafold_prediction_version = request.form['ph'], request.form['prediction_version']
+            ph = request.form['ph']
 
             ph, is_ph_valid = valid_pH(ph)
             if not is_ph_valid:
@@ -59,7 +59,7 @@ def main_site():
                 return render_template('index.html',
                                        code=code)
 
-            ID = f'{code}_{ph}_{alphafold_prediction_version}'
+            ID = f'{code}_{ph}'
 
             # check whether the structure is currently calculated
             if is_running(ID):
@@ -74,8 +74,8 @@ def main_site():
                 return redirect(url_for('results',
                                         ID=ID))
 
-            if not valid_alphafold_request(code, alphafold_prediction_version):
-                message = Markup(f'The structure with code <strong>{code}</strong> in prediction version <strong>{alphafold_prediction_version}</strong> '
+            if not valid_alphafold_request(code):
+                message = Markup(f'The structure with code <strong>{code}</strong> '
                       f'is either not found in AlphaFoldDB or the code is entered in the wrong format. '
                       f'UniProt code is allowed only in its short form (e.g. A0A1P8BEE7, B7ZW16). '
                       f'Other notations (e.g. A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported. '
@@ -86,7 +86,6 @@ def main_site():
             # start calculation
             return render_template('computation_progress.html',
                                    ID=ID,
-                                   alphafold_prediction_version=alphafold_prediction_version,
                                    code=code,
                                    ph=ph)
     return render_template('index.html')
@@ -113,7 +112,7 @@ def calculation():
 @application.route('/wrong_structure')
 def wrong_structure():
     ID = request.args.get('ID')
-    code, ph, alphafold_prediction_version = ID.split('_')
+    code, ph = ID.split('_')
     problematic_atoms_file = open(f'{root_dir}/calculated_structures/{ID}/problematic_atoms.json', 'r')
     problematic_atoms = json.load(problematic_atoms_file)
     message = Markup('There is a structural error with atoms <span id="problematic_atoms"></span>! Calculation of partial atomic charges is not possible.')
@@ -122,8 +121,7 @@ def wrong_structure():
                            ID=ID,
                            code=code,
                            ph=ph,
-                           problematic_atoms=problematic_atoms,
-                           alphafold_prediction_version=alphafold_prediction_version)
+                           problematic_atoms=problematic_atoms)
 
 
 @application.route('/progress')
@@ -139,7 +137,7 @@ def results():
     residue_end = request.args.get('residue_end')
 
     try:
-        code, ph, alphafold_prediction_version = ID.split('_')
+        code, ph = ID.split('_')
     except:
         message = Markup('The ID was entered in the wrong format. The ID should be of the form <strong>&ltUniProt code&gt_&ltph&gt_&ltAlphaFold2 prediction version&gt</strong>.')
         flash(message, 'danger')
@@ -148,7 +146,7 @@ def results():
     data_dir = f'{root_dir}/calculated_structures/{ID}'
 
     if not already_calculated(ID) and not is_running(ID):
-        message = Markup(f'There are no results for structure with UniProt <strong>{code}</strong> in AlphaFold2 prediction version <strong>{alphafold_prediction_version}</strong> and pH <strong>{ph}</strong>.')
+        message = Markup(f'There are no results for structure with UniProt <strong>{code}</strong> and pH <strong>{ph}</strong>.')
         flash(message, 'danger')
         return redirect(url_for('main_site'))
 
@@ -165,7 +163,6 @@ def results():
                            code=code,
                            n_ats=n_ats,
                            ph=ph,
-                           alphafold_prediction_version=alphafold_prediction_version,
                            residue_start=residue_start,
                            residue_end=residue_end
                            )
@@ -209,10 +206,10 @@ def calculate_charges(code: str):
     empirical_method = 'SQEqp'
     message_dict = {'UniProt code': code,
                     'empirical method': empirical_method}
-    allowed_url_arguments = set(['ph', 'alphafold_prediction_version'])
+    allowed_url_arguments = set(['ph'])
     if not set(request.args.keys()).issubset(allowed_url_arguments):
         message_dict.update({'status': 'failed',
-                             'error message': 'Only URL arguments "ph" and "alphafold_prediction_version" are allowed.'})
+                             'error message': 'Only URL argument "ph" is allowed.'})
         return jsonify(message_dict), 400
 
     ph, is_ph_valid = valid_pH(request.args.get('ph'))
@@ -222,22 +219,15 @@ def calculate_charges(code: str):
                              'error message': 'pH must be a float value from 0 to 14!'})
         return jsonify(message_dict), 400
 
-    alphafold_prediction_version, is_version_valid = valid_prediction_version(request.args.get('alphafold_prediction_version'))
-    message_dict['AlphaFold2 prediction version'] = alphafold_prediction_version
-    if not is_version_valid:
-        message_dict.update({'status': 'failed',
-                             'error message': 'AlphaFold2 prediction version can be integer from 1 to 4'})
-        return jsonify(message_dict), 400
-
-    ID = f'{code}_{ph}_{alphafold_prediction_version}'
+    ID = f'{code}_{ph}'
     if is_running(ID):
         while is_running(ID):
             sleep(5)
     else:
         if not already_calculated(ID):
-            if not valid_alphafold_request(code, alphafold_prediction_version):
+            if not valid_alphafold_request(code):
                 message_dict.update({'status': 'failed',
-                                     'error message': f'The structure with UniProt code {code} in prediction version {alphafold_prediction_version} '
+                                     'error message': f'The structure with UniProt code {code} '
                                                       f'is either not found in AlphaFoldDB or the UniProt code is entered in the wrong format. '
                                                       f'UniProt code is allowed only in its short form (e.g. A0A1P8BEE7, B7ZW16). '
                                                       f'Other notations (e.g. A0A159JYF7_9DIPT, Q8WZ42-F2) are not supported.'})

@@ -10,16 +10,16 @@
 
 ## How to run
 
-To run AlphaCharges locally, you will need to have [Python 3.9](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/) installed.
+To run AlphaCharges locally, you will need to have [Python 3.12](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/) installed.
 
 Then, clone project and install the project dependencies by running:
 
 ```bash
 $ cd /opt
 $ git clone https://github.com/sb-ncbr/AlphaCharges
-$ sudo python3.9 -m venv venv
+$ sudo python3.12 -m venv venv
 $ . venv/bin/activate
-$ pip install -r requirements.txt
+$ pip install -r AlphaCharges/requirements.txt
 ```
 Run the project by running the following command inside the virtual environment:
 

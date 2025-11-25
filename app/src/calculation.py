@@ -20,7 +20,7 @@ class Calculation:
         self.ID = ID
         self.empirical_method = empirical_method
         self.root_dir = root_dir
-        self.code, self.ph, self.alphafold_prediction_version = self.ID.split('_')
+        self.code, self.ph = self.ID.split('_')
         self.data_dir = f'{self.root_dir}/calculated_structures/{self.ID}'
         self.pdb_file = f'{self.data_dir}/{self.code}.pdb' # original pdb from alphafold, without hydrogens
         self.mmcif_file = f'{self.data_dir}/{self.code}.cif' # original mmCIF from alphafold, without hydrogens
@@ -30,15 +30,15 @@ class Calculation:
         os.mkdir(self.data_dir)
         os.mknod(f'{self.data_dir}/page_log.txt')
         with open(f'{self.root_dir}/calculated_structures/logs.txt', 'a') as log_file:
-            log_file.write(f'{remote_addr} {self.code} {self.ph} {self.alphafold_prediction_version} {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
+            log_file.write(f'{remote_addr} {self.code} {self.ph} {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
 
     def download_PDB(self):
         self.logs.add_log('Structure download...')
         s = time()
-        response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v{self.alphafold_prediction_version}.pdb')
+        response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v6.pdb')
         with open(f'{self.pdb_file}', 'w') as pdb_file:
             pdb_file.write(response.text)
-        response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v{self.alphafold_prediction_version}.cif')
+        response = requests.get(f'https://alphafold.ebi.ac.uk/files/AF-{self.code}-F1-model_v6.cif')
         with open(f'{self.mmcif_file}', 'w') as mmcif_file:
             mmcif_file.write(response.text)
         self.logs.add_log(f'Structure downloaded. ({round(time() - s, 2)}s)')
