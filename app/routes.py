@@ -182,7 +182,7 @@ def download_files_for_wrong_structure():
 @application.route('/download_files')
 def download_files():
     ID = request.args.get('ID')
-    code, _, _ = ID.split('_')
+    code, _, = ID.split('_')
     data_dir = f'{root_dir}/calculated_structures/{ID}'
     with zipfile.ZipFile(f'{data_dir}/{ID}.zip', 'w') as zip:
         zip.write(f'{data_dir}/charges.txt', arcname=f'{code}_charges.txt')
